@@ -93,6 +93,66 @@ module ClaudeCodeSDK
     )
   end
 
+  # Continue the most recent conversation
+  def self.continue_conversation(prompt = nil, options: nil, cli_path: nil, mcp_servers: {})
+    options ||= ClaudeCodeOptions.new
+    
+    # Set continue_conversation to true
+    continue_options = ClaudeCodeOptions.new(
+      allowed_tools: options.allowed_tools,
+      max_thinking_tokens: options.max_thinking_tokens,
+      system_prompt: options.system_prompt,
+      append_system_prompt: options.append_system_prompt,
+      mcp_tools: options.mcp_tools,
+      mcp_servers: options.mcp_servers,
+      permission_mode: options.permission_mode,
+      continue_conversation: true,
+      resume: options.resume,
+      max_turns: options.max_turns,
+      disallowed_tools: options.disallowed_tools,
+      model: options.model,
+      permission_prompt_tool_name: options.permission_prompt_tool_name,
+      cwd: options.cwd
+    )
+    
+    query(
+      prompt: prompt || "",
+      options: continue_options,
+      cli_path: cli_path,
+      mcp_servers: mcp_servers
+    )
+  end
+  
+  # Resume a specific conversation by session ID
+  def self.resume_conversation(session_id, prompt = nil, options: nil, cli_path: nil, mcp_servers: {})
+    options ||= ClaudeCodeOptions.new
+    
+    # Set resume with the session ID
+    resume_options = ClaudeCodeOptions.new(
+      allowed_tools: options.allowed_tools,
+      max_thinking_tokens: options.max_thinking_tokens,
+      system_prompt: options.system_prompt,
+      append_system_prompt: options.append_system_prompt,
+      mcp_tools: options.mcp_tools,
+      mcp_servers: options.mcp_servers,
+      permission_mode: options.permission_mode,
+      continue_conversation: options.continue_conversation,
+      resume: session_id,
+      max_turns: options.max_turns,
+      disallowed_tools: options.disallowed_tools,
+      model: options.model,
+      permission_prompt_tool_name: options.permission_prompt_tool_name,
+      cwd: options.cwd
+    )
+    
+    query(
+      prompt: prompt || "",
+      options: resume_options,
+      cli_path: cli_path,
+      mcp_servers: mcp_servers
+    )
+  end
+
   # Streaming helper that prints messages as they arrive
   def self.stream_query(prompt:, options: nil, cli_path: nil, mcp_servers: {}, &block)
     query(

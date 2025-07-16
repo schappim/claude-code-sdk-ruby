@@ -40,6 +40,29 @@ end
 
 ## Usage
 
+### Authentication
+
+First, set your API key:
+
+```bash
+export ANTHROPIC_API_KEY='your-api-key-here'
+```
+
+Or for Amazon Bedrock:
+```bash
+export CLAUDE_CODE_USE_BEDROCK=1
+export AWS_ACCESS_KEY_ID='your-access-key'
+export AWS_SECRET_ACCESS_KEY='your-secret-key'  
+export AWS_REGION='us-west-2'
+```
+
+Or for Google Vertex AI:
+```bash
+export CLAUDE_CODE_USE_VERTEX=1
+export GOOGLE_APPLICATION_CREDENTIALS='path/to/service-account.json'
+export GOOGLE_CLOUD_PROJECT='your-project-id'
+```
+
 ### Basic Query
 
 ```ruby
@@ -65,6 +88,25 @@ options = ClaudeCodeSDK::ClaudeCodeOptions.new(
 ClaudeCodeSDK.query(prompt: "Tell me a joke", options: options).each do |message|
   puts message
 end
+```
+
+### Conversation Resuming
+
+```ruby
+# Continue the most recent conversation
+ClaudeCodeSDK.continue_conversation("What did we just discuss?").each do |message|
+  # Process messages...
+end
+
+# Resume a specific conversation by session ID
+session_id = "550e8400-e29b-41d4-a716-446655440000"
+ClaudeCodeSDK.resume_conversation(session_id, "Continue our discussion").each do |message|
+  # Process messages...
+end
+
+# Continue with options
+options = ClaudeCodeSDK::ClaudeCodeOptions.new(max_turns: 2)
+ClaudeCodeSDK.continue_conversation("Add more details", options: options)
 ```
 
 ### Using Tools
@@ -93,15 +135,56 @@ options = ClaudeCodeSDK::ClaudeCodeOptions.new(
 
 ## API Reference
 
-### `ClaudeCodeSDK.query(prompt:, options: nil)`
+### Core Methods
+
+#### `ClaudeCodeSDK.query(prompt:, options: nil, cli_path: nil, mcp_servers: {})`
 
 Main function for querying Claude.
 
 **Parameters:**
 - `prompt` (String): The prompt to send to Claude
 - `options` (ClaudeCodeOptions): Optional configuration
+- `cli_path` (String): Optional path to Claude CLI binary
+- `mcp_servers` (Hash): Optional MCP server configurations
 
 **Returns:** Enumerator of response messages
+
+#### `ClaudeCodeSDK.continue_conversation(prompt = nil, options: nil, cli_path: nil, mcp_servers: {})`
+
+Continue the most recent conversation.
+
+**Parameters:**
+- `prompt` (String): Optional new prompt to add
+- `options` (ClaudeCodeOptions): Optional configuration
+- `cli_path` (String): Optional path to Claude CLI binary
+- `mcp_servers` (Hash): Optional MCP server configurations
+
+**Returns:** Enumerator of response messages
+
+#### `ClaudeCodeSDK.resume_conversation(session_id, prompt = nil, options: nil, cli_path: nil, mcp_servers: {})`
+
+Resume a specific conversation by session ID.
+
+**Parameters:**
+- `session_id` (String): The session ID to resume
+- `prompt` (String): Optional new prompt to add
+- `options` (ClaudeCodeOptions): Optional configuration
+- `cli_path` (String): Optional path to Claude CLI binary
+- `mcp_servers` (Hash): Optional MCP server configurations
+
+**Returns:** Enumerator of response messages
+
+#### `ClaudeCodeSDK.stream_query(prompt:, options: nil, cli_path: nil, mcp_servers: {}, &block)`
+
+Stream query responses with auto-formatting or custom block handling.
+
+#### `ClaudeCodeSDK.quick_mcp_query(prompt, server_name:, server_url:, tools:, **options)`
+
+Ultra-convenient method for quick MCP server usage.
+
+#### `ClaudeCodeSDK.add_mcp_server(name, config)`
+
+Helper to create MCP server configurations.
 
 ### Types
 

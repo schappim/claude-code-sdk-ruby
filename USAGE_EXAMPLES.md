@@ -25,6 +25,8 @@ bundle install
 ruby examples/basic_usage.rb
 ruby examples/streaming_examples.rb
 ruby examples/mcp_examples.rb
+ruby examples/conversation_resuming.rb
+ruby examples/authentication_examples.rb
 ```
 
 ### 2. In IRB/console:
@@ -40,6 +42,12 @@ require_relative 'examples/irb_helpers'
 quick_claude("What is Ruby?")
 stream_claude("Explain blocks")
 ninja_test("Tell me about yourself")
+
+# Conversation helpers:
+continue_chat("Follow up question")
+resume_chat("session-id", "New prompt")
+save_session("session-id")
+resume_last("Continue with last session")
 ```
 
 ### 3. In a Ruby project:

@@ -180,6 +180,31 @@ module ClaudeCodeSDK
       nil
     end
 
+    def build_environment
+      # Start with current environment
+      env = ENV.to_h
+      
+      # Set SDK entrypoint identifier
+      env['CLAUDE_CODE_ENTRYPOINT'] = 'sdk-ruby'
+      
+      # Ensure ANTHROPIC_API_KEY is available if set
+      # This allows the CLI to authenticate with Anthropic's API
+      if ENV['ANTHROPIC_API_KEY']
+        env['ANTHROPIC_API_KEY'] = ENV['ANTHROPIC_API_KEY']
+      end
+      
+      # Support for other authentication methods
+      if ENV['CLAUDE_CODE_USE_BEDROCK']
+        env['CLAUDE_CODE_USE_BEDROCK'] = ENV['CLAUDE_CODE_USE_BEDROCK']
+      end
+      
+      if ENV['CLAUDE_CODE_USE_VERTEX']
+        env['CLAUDE_CODE_USE_VERTEX'] = ENV['CLAUDE_CODE_USE_VERTEX']
+      end
+      
+      env
+    end
+
     def build_command
       cmd = [@cli_path, '--output-format', 'stream-json', '--verbose']
 
@@ -212,7 +237,7 @@ module ClaudeCodeSDK
       puts "Debug: Connecting with command: #{cmd.join(' ')}" if ENV['DEBUG_CLAUDE_SDK']
       
       begin
-        env = ENV.to_h.merge('CLAUDE_CODE_ENTRYPOINT' => 'sdk-ruby')
+        env = build_environment
         
         if @cwd
           @stdin, @stdout, @stderr, @process = Open3.popen3(env, *cmd, chdir: @cwd)
