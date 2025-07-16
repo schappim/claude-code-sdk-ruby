@@ -31,6 +31,40 @@ ClaudeCodeSDK.query(
 end
 ```
 
+### 1.5. Streaming JSON Input (Multi-turn Conversations)
+
+For multiple conversation turns without restarting the CLI:
+
+```ruby
+# Create multiple user messages
+messages = [
+  ClaudeCodeSDK::JSONLHelpers.create_user_message("Hello! I need help with Ruby."),
+  ClaudeCodeSDK::JSONLHelpers.create_user_message("Can you explain how blocks work?"),
+  ClaudeCodeSDK::JSONLHelpers.create_user_message("Show me a practical example.")
+]
+
+# Process all messages in a single streaming session
+ClaudeCodeSDK.stream_json_query(messages) do |message|
+  case message
+  when ClaudeCodeSDK::SystemMessage
+    puts "🔧 System: #{message.subtype}"
+  when ClaudeCodeSDK::AssistantMessage
+    message.content.each do |block|
+      if block.is_a?(ClaudeCodeSDK::TextBlock)
+        puts "💬 #{block.text}"
+      end
+    end
+  when ClaudeCodeSDK::ResultMessage
+    puts "✅ Completed #{message.num_turns} turns - Cost: $#{message.total_cost_usd}"
+  end
+end
+```
+
+**Equivalent CLI command:**
+```bash
+echo '{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Explain this code"}]}}' | claude -p --output-format=stream-json --input-format=stream-json --verbose
+```
+
 ### 2. Auto-formatted Streaming
 
 ```ruby

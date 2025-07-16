@@ -134,11 +134,41 @@ module ClaudeCodeSDK
     end
   end
 
+  # JSONL message helpers for streaming input
+  module JSONLHelpers
+    # Create a user message in the format expected by Claude CLI
+    def self.create_user_message(text)
+      {
+        'type' => 'user',
+        'message' => {
+          'role' => 'user',
+          'content' => [
+            {
+              'type' => 'text',
+              'text' => text
+            }
+          ]
+        }
+      }
+    end
+
+    # Format multiple messages as JSONL
+    def self.format_messages_as_jsonl(messages)
+      messages.map { |msg| msg.to_json }.join("\n")
+    end
+
+    # Create a multi-turn conversation as JSONL messages
+    def self.create_conversation(*turns)
+      turns.map { |turn| create_user_message(turn) }
+    end
+  end
+
   # Query options
   class ClaudeCodeOptions
     attr_reader :allowed_tools, :max_thinking_tokens, :system_prompt, :append_system_prompt,
                 :mcp_tools, :mcp_servers, :permission_mode, :continue_conversation, :resume,
-                :max_turns, :disallowed_tools, :model, :permission_prompt_tool_name, :cwd
+                :max_turns, :disallowed_tools, :model, :permission_prompt_tool_name, :cwd,
+                :input_format, :output_format
 
     def initialize(
       allowed_tools: [],
@@ -154,7 +184,9 @@ module ClaudeCodeSDK
       disallowed_tools: [],
       model: nil,
       permission_prompt_tool_name: nil,
-      cwd: nil
+      cwd: nil,
+      input_format: nil,
+      output_format: nil
     )
       @allowed_tools = allowed_tools
       @max_thinking_tokens = max_thinking_tokens
@@ -170,6 +202,8 @@ module ClaudeCodeSDK
       @model = model
       @permission_prompt_tool_name = permission_prompt_tool_name
       @cwd = cwd
+      @input_format = input_format
+      @output_format = output_format
     end
 
     def to_h
@@ -187,7 +221,9 @@ module ClaudeCodeSDK
         disallowed_tools: @disallowed_tools,
         model: @model,
         permission_prompt_tool_name: @permission_prompt_tool_name,
-        cwd: @cwd&.to_s
+        cwd: @cwd&.to_s,
+        input_format: @input_format,
+        output_format: @output_format
       }.compact
     end
   end

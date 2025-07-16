@@ -153,6 +153,119 @@ module ClaudeCodeSDK
     )
   end
 
+  # Query with streaming JSON input (multiple turns via JSONL)
+  def self.stream_json_query(messages, options: nil, cli_path: nil, mcp_servers: {})
+    options ||= ClaudeCodeOptions.new
+    
+    # Merge MCP servers if provided as a separate parameter
+    unless mcp_servers.empty?
+      options = ClaudeCodeOptions.new(
+        allowed_tools: options.allowed_tools,
+        max_thinking_tokens: options.max_thinking_tokens,
+        system_prompt: options.system_prompt,
+        append_system_prompt: options.append_system_prompt,
+        mcp_tools: options.mcp_tools,
+        mcp_servers: options.mcp_servers.merge(mcp_servers),
+        permission_mode: options.permission_mode,
+        continue_conversation: options.continue_conversation,
+        resume: options.resume,
+        max_turns: options.max_turns,
+        disallowed_tools: options.disallowed_tools,
+        model: options.model,
+        permission_prompt_tool_name: options.permission_prompt_tool_name,
+        cwd: options.cwd,
+        input_format: 'stream-json',
+        output_format: 'stream-json'
+      )
+    else
+      # Ensure we're using streaming JSON input and output
+      options = ClaudeCodeOptions.new(
+        allowed_tools: options.allowed_tools,
+        max_thinking_tokens: options.max_thinking_tokens,
+        system_prompt: options.system_prompt,
+        append_system_prompt: options.append_system_prompt,
+        mcp_tools: options.mcp_tools,
+        mcp_servers: options.mcp_servers,
+        permission_mode: options.permission_mode,
+        continue_conversation: options.continue_conversation,
+        resume: options.resume,
+        max_turns: options.max_turns,
+        disallowed_tools: options.disallowed_tools,
+        model: options.model,
+        permission_prompt_tool_name: options.permission_prompt_tool_name,
+        cwd: options.cwd,
+        input_format: 'stream-json',
+        output_format: 'stream-json'
+      )
+    end
+    
+    ENV['CLAUDE_CODE_ENTRYPOINT'] = 'sdk-ruby'
+    
+    # Create transport directly for streaming JSON input
+    transport = SubprocessCLITransport.new(prompt: "", options: options, cli_path: cli_path)
+    
+    begin
+      transport.connect
+      
+      # Send messages via stdin
+      transport.send_messages(messages)
+      
+      # Return enumerator for streaming responses
+      Enumerator.new do |yielder|
+        transport.receive_messages do |data|
+          # Parse messages directly since we don't need the full client here
+          message = parse_cli_message(data)
+          yielder << message if message
+        end
+      end
+    ensure
+      transport.disconnect
+    end
+  end
+
+  # Helper method to parse CLI messages for streaming JSON input
+  def self.parse_cli_message(data)
+    case data['type']
+    when 'user'
+      UserMessage.new(data.dig('message', 'content'))
+    when 'assistant'
+      content_blocks = parse_content_blocks(data.dig('message', 'content') || [])
+      AssistantMessage.new(content_blocks)
+    when 'system'
+      SystemMessage.new(subtype: data['subtype'], data: data)
+    when 'result'
+      ResultMessage.new(
+        subtype: data['subtype'],
+        duration_ms: data['duration_ms'],
+        duration_api_ms: data['duration_api_ms'],
+        is_error: data['is_error'],
+        num_turns: data['num_turns'],
+        session_id: data['session_id'],
+        total_cost_usd: data['total_cost_usd'],
+        usage: data['usage'],
+        result: data['result']
+      )
+    end
+  end
+
+  # Helper method to parse content blocks
+  def self.parse_content_blocks(blocks)
+    blocks.map do |block|
+      case block['type']
+      when 'text'
+        TextBlock.new(block['text'])
+      when 'tool_use'
+        ToolUseBlock.new(id: block['id'], name: block['name'], input: block['input'])
+      when 'tool_result'
+        ToolResultBlock.new(
+          tool_use_id: block['tool_use_id'],
+          content: block['content'],
+          is_error: block['is_error']
+        )
+      end
+    end.compact
+  end
+
   # Streaming helper that prints messages as they arrive
   def self.stream_query(prompt:, options: nil, cli_path: nil, mcp_servers: {}, &block)
     query(

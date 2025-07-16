@@ -206,7 +206,12 @@ module ClaudeCodeSDK
     end
 
     def build_command
-      cmd = [@cli_path, '--output-format', 'stream-json', '--verbose']
+      # Determine output format (default to stream-json for SDK)
+      output_format = @options.output_format || 'stream-json'
+      cmd = [@cli_path, '--output-format', output_format, '--verbose']
+
+      # Add input format if specified
+      cmd.concat(['--input-format', @options.input_format]) if @options.input_format
 
       cmd.concat(['--system-prompt', @options.system_prompt]) if @options.system_prompt
       cmd.concat(['--append-system-prompt', @options.append_system_prompt]) if @options.append_system_prompt
@@ -226,7 +231,14 @@ module ClaudeCodeSDK
         cmd.concat(['--mcp-config', JSON.generate(mcp_config)])
       end
 
-      cmd.concat(['--print', @prompt])
+      # For streaming JSON input, we use --print mode and send JSON via stdin
+      # For regular input, we use --print with the prompt
+      if @options.input_format == 'stream-json'
+        cmd << '--print'
+      else
+        cmd.concat(['--print', @prompt])
+      end
+      
       cmd
     end
 
@@ -244,7 +256,15 @@ module ClaudeCodeSDK
         else
           @stdin, @stdout, @stderr, @process = Open3.popen3(env, *cmd)
         end
-        @stdin.close # We don't need to send input
+        
+        # Handle different input modes
+        if @options.input_format == 'stream-json'
+          # Keep stdin open for streaming JSON input
+          puts "Debug: Keeping stdin open for streaming JSON input" if ENV['DEBUG_CLAUDE_SDK']
+        else
+          # Close stdin for regular prompt mode
+          @stdin.close
+        end
         
         puts "Debug: Process started with PID #{@process.pid}" if ENV['DEBUG_CLAUDE_SDK']
         
@@ -350,6 +370,30 @@ module ClaudeCodeSDK
 
     def connected?
       @process && @process.alive?
+    end
+
+    # Send a JSON message via stdin for streaming input mode
+    def send_message(message)
+      raise CLIConnectionError.new("Not connected or not in streaming mode") unless @stdin
+      
+      json_line = message.to_json + "\n"
+      puts "Debug: Sending JSON message: #{json_line.strip}" if ENV['DEBUG_CLAUDE_SDK']
+      
+      @stdin.write(json_line)
+      @stdin.flush
+    end
+
+    # Send multiple messages and close stdin to signal end of input
+    def send_messages(messages)
+      raise CLIConnectionError.new("Not connected or not in streaming mode") unless @stdin
+      
+      messages.each do |message|
+        send_message(message)
+      end
+      
+      # Close stdin to signal end of input stream
+      @stdin.close
+      @stdin = nil
     end
   end
 end

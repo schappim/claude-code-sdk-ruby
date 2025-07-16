@@ -109,6 +109,44 @@ options = ClaudeCodeSDK::ClaudeCodeOptions.new(max_turns: 2)
 ClaudeCodeSDK.continue_conversation("Add more details", options: options)
 ```
 
+### Streaming JSON Input
+
+For multi-turn conversations without restarting the CLI, use streaming JSON input:
+
+```ruby
+# Create multiple user messages for a conversation
+messages = [
+  ClaudeCodeSDK::JSONLHelpers.create_user_message("Hello! I'm working on a Ruby project."),
+  ClaudeCodeSDK::JSONLHelpers.create_user_message("Can you help me understand modules?"),
+  ClaudeCodeSDK::JSONLHelpers.create_user_message("Show me a practical example.")
+]
+
+# Process all messages in a single streaming session
+ClaudeCodeSDK.stream_json_query(messages) do |message|
+  case message
+  when ClaudeCodeSDK::AssistantMessage
+    message.content.each do |block|
+      puts block.text if block.is_a?(ClaudeCodeSDK::TextBlock)
+    end
+  when ClaudeCodeSDK::ResultMessage
+    puts "Cost: $#{message.total_cost_usd}"
+  end
+end
+
+# Manual JSONL format (equivalent to CLI)
+custom_messages = [
+  {
+    'type' => 'user',
+    'message' => {
+      'role' => 'user',
+      'content' => [{'type' => 'text', 'text' => 'Explain this code'}]
+    }
+  }
+]
+
+ClaudeCodeSDK.stream_json_query(custom_messages)
+```
+
 ### Using Tools
 
 ```ruby
@@ -178,6 +216,18 @@ Resume a specific conversation by session ID.
 
 Stream query responses with auto-formatting or custom block handling.
 
+#### `ClaudeCodeSDK.stream_json_query(messages, options: nil, cli_path: nil, mcp_servers: {})`
+
+Send multiple messages via streaming JSON input (JSONL format). This allows multiple turns of conversation without re-launching the Claude binary.
+
+**Parameters:**
+- `messages` (Array): Array of JSONL message objects
+- `options` (ClaudeCodeOptions): Optional configuration (automatically sets input_format: 'stream-json')
+- `cli_path` (String): Optional path to Claude CLI binary
+- `mcp_servers` (Hash): Optional MCP server configurations
+
+**Returns:** Enumerator of response messages
+
 #### `ClaudeCodeSDK.quick_mcp_query(prompt, server_name:, server_url:, tools:, **options)`
 
 Ultra-convenient method for quick MCP server usage.
@@ -185,6 +235,20 @@ Ultra-convenient method for quick MCP server usage.
 #### `ClaudeCodeSDK.add_mcp_server(name, config)`
 
 Helper to create MCP server configurations.
+
+### JSONL Helpers
+
+#### `ClaudeCodeSDK::JSONLHelpers.create_user_message(text)`
+
+Create a user message in the format expected by Claude CLI.
+
+#### `ClaudeCodeSDK::JSONLHelpers.create_conversation(*turns)`
+
+Create multiple user messages from text strings.
+
+#### `ClaudeCodeSDK::JSONLHelpers.format_messages_as_jsonl(messages)`
+
+Format multiple messages as JSONL string.
 
 ### Types
 

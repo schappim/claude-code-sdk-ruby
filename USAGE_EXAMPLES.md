@@ -27,6 +27,8 @@ ruby examples/streaming_examples.rb
 ruby examples/mcp_examples.rb
 ruby examples/conversation_resuming.rb
 ruby examples/authentication_examples.rb
+ruby examples/streaming_json_input.rb
+ruby examples/jsonl_cli_equivalent.rb
 ```
 
 ### 2. In IRB/console:
