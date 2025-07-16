@@ -12,20 +12,20 @@ All queries return lazy enumerators that stream messages in real-time, providing
 
 ```ruby
 # All queries stream by default
-ClaudeCodeSDK.query(
+ClaudeCode.query(
   prompt: "Explain Ruby blocks",
   options: ClaudeCodeOptions.new(max_turns: 1)
 ).each do |message|
   case message
-  when ClaudeCodeSDK::SystemMessage
+  when ClaudeCode::SystemMessage
     puts "🔧 System: #{message.subtype}"
-  when ClaudeCodeSDK::AssistantMessage
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         puts "💬 #{block.text}"
       end
     end
-  when ClaudeCodeSDK::ResultMessage
+  when ClaudeCode::ResultMessage
     puts "✅ Cost: $#{message.total_cost_usd}"
   end
 end
@@ -38,23 +38,23 @@ For multiple conversation turns without restarting the CLI:
 ```ruby
 # Create multiple user messages
 messages = [
-  ClaudeCodeSDK::JSONLHelpers.create_user_message("Hello! I need help with Ruby."),
-  ClaudeCodeSDK::JSONLHelpers.create_user_message("Can you explain how blocks work?"),
-  ClaudeCodeSDK::JSONLHelpers.create_user_message("Show me a practical example.")
+  ClaudeCode::JSONLHelpers.create_user_message("Hello! I need help with Ruby."),
+  ClaudeCode::JSONLHelpers.create_user_message("Can you explain how blocks work?"),
+  ClaudeCode::JSONLHelpers.create_user_message("Show me a practical example.")
 ]
 
 # Process all messages in a single streaming session
-ClaudeCodeSDK.stream_json_query(messages) do |message|
+ClaudeCode.stream_json_query(messages) do |message|
   case message
-  when ClaudeCodeSDK::SystemMessage
+  when ClaudeCode::SystemMessage
     puts "🔧 System: #{message.subtype}"
-  when ClaudeCodeSDK::AssistantMessage
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         puts "💬 #{block.text}"
       end
     end
-  when ClaudeCodeSDK::ResultMessage
+  when ClaudeCode::ResultMessage
     puts "✅ Completed #{message.num_turns} turns - Cost: $#{message.total_cost_usd}"
   end
 end
@@ -69,7 +69,7 @@ echo '{"type":"user","message":{"role":"user","content":[{"type":"text","text":"
 
 ```ruby
 # Automatic pretty-printing
-ClaudeCodeSDK.stream_query(
+ClaudeCode.stream_query(
   prompt: "Count from 1 to 5",
   options: ClaudeCodeOptions.new(max_turns: 1)
 )
@@ -84,19 +84,19 @@ ClaudeCodeSDK.stream_query(
 ```ruby
 start_time = Time.now
 
-ClaudeCodeSDK.stream_query(
+ClaudeCode.stream_query(
   prompt: "Explain inheritance in Ruby"
 ) do |message, index|
   timestamp = Time.now - start_time
-  
+
   case message
-  when ClaudeCodeSDK::AssistantMessage
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         puts "[#{format('%.2f', timestamp)}s] #{block.text}"
       end
     end
-  when ClaudeCodeSDK::ResultMessage
+  when ClaudeCode::ResultMessage
     puts "[#{format('%.2f', timestamp)}s] 💰 $#{format('%.6f', message.total_cost_usd || 0)}"
   end
 end
@@ -107,12 +107,12 @@ end
 Messages arrive in this typical order:
 
 1. **SystemMessage** (`subtype: "init"`) - Session initialization with metadata
-2. **AssistantMessage** - Claude's response with content blocks  
+2. **AssistantMessage** - Claude's response with content blocks
 3. **ResultMessage** - Final statistics and cost information
 
 ### System Message (First)
 ```ruby
-when ClaudeCodeSDK::SystemMessage
+when ClaudeCode::SystemMessage
   if message.subtype == "init"
     puts "Session: #{message.data['session_id']}"
     puts "Model: #{message.data['model']}"
@@ -123,14 +123,14 @@ when ClaudeCodeSDK::SystemMessage
 
 ### Assistant Message (Main Content)
 ```ruby
-when ClaudeCodeSDK::AssistantMessage
+when ClaudeCode::AssistantMessage
   message.content.each do |block|
     case block
-    when ClaudeCodeSDK::TextBlock
+    when ClaudeCode::TextBlock
       puts "Text: #{block.text}"
-    when ClaudeCodeSDK::ToolUseBlock
+    when ClaudeCode::ToolUseBlock
       puts "Tool: #{block.name} with #{block.input}"
-    when ClaudeCodeSDK::ToolResultBlock
+    when ClaudeCode::ToolResultBlock
       puts "Result: #{block.content}"
     end
   end
@@ -138,9 +138,9 @@ when ClaudeCodeSDK::AssistantMessage
 
 ### Result Message (Last)
 ```ruby
-when ClaudeCodeSDK::ResultMessage
+when ClaudeCode::ResultMessage
   puts "Duration: #{message.duration_ms}ms"
-  puts "API Time: #{message.duration_api_ms}ms" 
+  puts "API Time: #{message.duration_api_ms}ms"
   puts "Turns: #{message.num_turns}"
   puts "Cost: $#{message.total_cost_usd}"
   puts "Session: #{message.session_id}"
@@ -152,22 +152,22 @@ end
 MCP tool calls also stream in real-time:
 
 ```ruby
-ClaudeCodeSDK.quick_mcp_query(
+ClaudeCode.quick_mcp_query(
   "Use the about tool",
   server_name: "ninja",
   server_url: "https://mcp-creator-ninja-v1-4-0.mcp.soy/",
   tools: "about"
 ).each do |message|
   case message
-  when ClaudeCodeSDK::AssistantMessage
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
       case block
-      when ClaudeCodeSDK::TextBlock
+      when ClaudeCode::TextBlock
         puts "📝 #{block.text}"
-      when ClaudeCodeSDK::ToolUseBlock
+      when ClaudeCode::ToolUseBlock
         puts "🔧 Using: #{block.name}"
         puts "📥 Input: #{block.input}"
-      when ClaudeCodeSDK::ToolResultBlock
+      when ClaudeCode::ToolResultBlock
         puts "📤 Result: #{block.content}"
       end
     end
@@ -182,18 +182,18 @@ end
 message_count = 0
 total_text_length = 0
 
-ClaudeCodeSDK.query(prompt: "Write a long story").each do |message|
+ClaudeCode.query(prompt: "Write a long story").each do |message|
   message_count += 1
-  
-  if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+
+  if message.is_a?(ClaudeCode::AssistantMessage)
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         total_text_length += block.text.length
         puts "Progress: #{message_count} messages, #{total_text_length} characters"
       end
     end
   end
-  
+
   # Early termination if needed
   break if total_text_length > 10000
 end
@@ -202,18 +202,18 @@ end
 ### Error Handling During Streaming
 ```ruby
 begin
-  ClaudeCodeSDK.stream_query(prompt: "Complex operation") do |message, index|
+  ClaudeCode.stream_query(prompt: "Complex operation") do |message, index|
     case message
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       if message.is_error
         puts "❌ Error detected: #{message.subtype}"
         # Handle error immediately
       end
     end
   end
-rescue ClaudeCodeSDK::ProcessError => e
+rescue ClaudeCode::ProcessError => e
   puts "Process failed: #{e.message}"
-rescue ClaudeCodeSDK::CLIJSONDecodeError => e
+rescue ClaudeCode::CLIJSONDecodeError => e
   puts "JSON parsing failed: #{e.message}"
 end
 ```
@@ -222,19 +222,19 @@ end
 ```ruby
 tool_calls = []
 
-ClaudeCodeSDK.query(
+ClaudeCode.query(
   prompt: "Analyze this codebase using available tools",
   options: ClaudeCodeOptions.new(
     allowed_tools: ["Read", "Bash", "Grep"],
     max_turns: 5
   )
 ).each do |message|
-  if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+  if message.is_a?(ClaudeCode::AssistantMessage)
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::ToolUseBlock)
+      if block.is_a?(ClaudeCode::ToolUseBlock)
         tool_calls << { name: block.name, input: block.input, time: Time.now }
         puts "🔧 Tool #{tool_calls.length}: #{block.name}"
-        
+
         # React to specific tools
         case block.name
         when "Bash"
@@ -255,13 +255,13 @@ puts "Total tools used: #{tool_calls.length}"
 # Process large responses without storing everything in memory
 text_chunks = []
 
-ClaudeCodeSDK.query(prompt: "Generate a very long document").each do |message|
-  if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+ClaudeCode.query(prompt: "Generate a very long document").each do |message|
+  if message.is_a?(ClaudeCode::AssistantMessage)
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         # Process each chunk immediately
         process_text_chunk(block.text)
-        
+
         # Only keep recent chunks in memory
         text_chunks << block.text
         text_chunks.shift if text_chunks.length > 10
@@ -274,7 +274,7 @@ end
 ## Performance Benefits
 
 - **Memory Efficient**: No need to collect all messages before processing
-- **Responsive UI**: Immediate feedback for long-running operations  
+- **Responsive UI**: Immediate feedback for long-running operations
 - **Early Termination**: Stop processing when you have enough information
 - **Real-time Monitoring**: Watch tool calls and results as they happen
 - **Progress Tracking**: Monitor complex multi-step operations
@@ -285,7 +285,7 @@ For Rails applications, combine streaming with ActionCable for real-time WebSock
 
 ```ruby
 # In a Sidekiq job
-ClaudeCodeSDK.query(prompt: prompt, options: options).each do |message|
+ClaudeCode.query(prompt: prompt, options: options).each do |message|
   ActionCable.server.broadcast("claude_#{user_id}", {
     type: 'claude_message',
     data: serialize_message(message),
@@ -306,7 +306,7 @@ require_relative 'examples/irb_helpers'
 # Auto-formatted streaming
 auto_stream("Count to 5")
 
-# Streaming with timestamps  
+# Streaming with timestamps
 stream_claude("What is Ruby?")
 
 # MCP streaming

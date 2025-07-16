@@ -10,6 +10,11 @@ require_relative 'claude_code/errors'
 require_relative 'claude_code/client'
 
 module ClaudeCode
+  # Check if API key is configured
+  def self.api_key_configured?
+    !ENV['ANTHROPIC_API_KEY'].nil? && !ENV['ANTHROPIC_API_KEY'].strip.empty?
+  end
+
   # Main query method - supports both positional and keyword arguments
   def self.query(prompt_or_args = nil, prompt: nil, options: nil, cli_path: nil, mcp_servers: {}, &block)
     # Handle positional argument for backward compatibility

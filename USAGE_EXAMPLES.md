@@ -59,7 +59,7 @@ resume_last("Continue with last session")
 require_relative 'path/to/ruby/lib/claude_code_sdk'
 
 # Use normally
-ClaudeCodeSDK.query(prompt: "Hello").each { |msg| puts msg }
+ClaudeCode.query(prompt: "Hello").each { |msg| puts msg }
 ```
 
 ## Rails + Sidekiq Streaming Example
@@ -83,29 +83,29 @@ gem 'redis'
 # app/jobs/claude_streaming_job.rb
 class ClaudeStreamingJob
   include Sidekiq::Job
-  
+
   def perform(user_id, query_id, prompt, options = {})
     require_relative '../vendor/claude-code-sdk-ruby/lib/claude_code_sdk'
-    
+
     channel = "claude_stream_#{user_id}_#{query_id}"
-    
+
     # Parse options
-    claude_options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+    claude_options = ClaudeCode::ClaudeCodeOptions.new(
       model: options['model'],
       max_turns: options['max_turns'] || 1,
       system_prompt: options['system_prompt'],
       allowed_tools: options['allowed_tools'] || []
     )
-    
+
     # Stream Claude responses
     message_count = 0
-    ClaudeCodeSDK.query(
+    ClaudeCode.query(
       prompt: prompt,
       options: claude_options,
       cli_path: ENV['CLAUDE_CLI_PATH'] || '/usr/local/bin/claude'
     ).each do |message|
       message_count += 1
-      
+
       # Broadcast each message via ActionCable
       ActionCable.server.broadcast(channel, {
         type: 'claude_message',
@@ -114,11 +114,11 @@ class ClaudeStreamingJob
         timestamp: Time.current.iso8601,
         data: serialize_claude_message(message)
       })
-      
+
       # Optional: Save to database
       save_message_to_db(user_id, query_id, message_count, message)
     end
-    
+
     # Broadcast completion
     ActionCable.server.broadcast(channel, {
       type: 'complete',
@@ -127,23 +127,23 @@ class ClaudeStreamingJob
       timestamp: Time.current.iso8601
     })
   end
-  
+
   private
-  
+
   def serialize_claude_message(message)
     case message
-    when ClaudeCodeSDK::SystemMessage
+    when ClaudeCode::SystemMessage
       {
         message_type: 'system',
         subtype: message.subtype,
         data: message.data
       }
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       {
         message_type: 'assistant',
         content: message.content.map { |block| serialize_content_block(block) }
       }
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       {
         message_type: 'result',
         subtype: message.subtype,
@@ -153,18 +153,18 @@ class ClaudeStreamingJob
       }
     end
   end
-  
+
   def serialize_content_block(block)
     case block
-    when ClaudeCodeSDK::TextBlock
+    when ClaudeCode::TextBlock
       { type: 'text', text: block.text }
-    when ClaudeCodeSDK::ToolUseBlock
+    when ClaudeCode::ToolUseBlock
       { type: 'tool_use', id: block.id, name: block.name, input: block.input }
-    when ClaudeCodeSDK::ToolResultBlock
+    when ClaudeCode::ToolResultBlock
       { type: 'tool_result', tool_use_id: block.tool_use_id, content: block.content, is_error: block.is_error }
     end
   end
-  
+
   def save_message_to_db(user_id, query_id, message_index, message)
     # Example database save
     # ClaudeMessage.create!(
@@ -191,7 +191,7 @@ class ClaudeStreamChannel < ApplicationCable::Channel
       reject
     end
   end
-  
+
   def unsubscribed
     # Cleanup when channel is unsubscribed
   end
@@ -204,10 +204,10 @@ end
 # app/controllers/claude_controller.rb
 class ClaudeController < ApplicationController
   before_action :authenticate_user!
-  
+
   def create_stream_query
     query_id = SecureRandom.uuid
-    
+
     # Validate input
     prompt = params.require(:prompt)
     options = {
@@ -216,7 +216,7 @@ class ClaudeController < ApplicationController
       'system_prompt' => params[:system_prompt],
       'allowed_tools' => params[:allowed_tools] || []
     }
-    
+
     # Start background job
     ClaudeStreamingJob.perform_async(
       current_user.id,
@@ -224,7 +224,7 @@ class ClaudeController < ApplicationController
       prompt,
       options
     )
-    
+
     render json: {
       query_id: query_id,
       channel: "claude_stream_#{current_user.id}_#{query_id}",
@@ -243,7 +243,7 @@ class ClaudeStreaming {
     this.userId = userId;
     this.activeSubscriptions = new Map();
   }
-  
+
   startQuery(prompt, options = {}) {
     return fetch('/claude/stream_query', {
       method: 'POST',
@@ -265,7 +265,7 @@ class ClaudeStreaming {
       return data;
     });
   }
-  
+
   subscribeToQuery(queryId, onMessage, onComplete) {
     const subscription = App.cable.subscriptions.create(
       {
@@ -287,13 +287,13 @@ class ClaudeStreaming {
         }
       }
     );
-    
+
     this.activeSubscriptions.set(queryId, subscription);
   }
-  
+
   handleClaudeMessage(data, onMessage) {
     const message = data.data;
-    
+
     if (message.message_type === 'assistant') {
       message.content.forEach(block => {
         if (block.type === 'text') {
@@ -320,7 +320,7 @@ class ClaudeStreaming {
       });
     }
   }
-  
+
   handleComplete(data, onComplete) {
     if (onComplete) {
       onComplete({
@@ -330,7 +330,7 @@ class ClaudeStreaming {
       });
     }
   }
-  
+
   unsubscribeFromQuery(queryId) {
     const subscription = this.activeSubscriptions.get(queryId);
     if (subscription) {
@@ -376,7 +376,7 @@ REDIS_URL=redis://localhost:6379/0
 # config/routes.rb
 Rails.application.routes.draw do
   mount ActionCable.server => '/cable'
-  
+
   resources :claude, only: [] do
     collection do
       post 'stream_query'
@@ -418,7 +418,7 @@ ClaudeStreamingJob.perform_async(
 This setup provides:
 - ✅ Real-time streaming via WebSockets
 - ✅ Background processing with Sidekiq
-- ✅ Error handling and retry logic  
+- ✅ Error handling and retry logic
 - ✅ Message persistence (optional)
 - ✅ User authentication and authorization
 - ✅ Frontend integration with ActionCable

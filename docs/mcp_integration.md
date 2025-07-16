@@ -8,7 +8,7 @@ The Ruby Claude Code SDK provides ergonomic integration with Model Context Proto
 
 ```ruby
 # Simplest way to use MCP
-ClaudeCodeSDK.quick_mcp_query(
+ClaudeCode.quick_mcp_query(
   "Use the about tool to describe yourself",
   server_name: "ninja",
   server_url: "https://mcp-creator-ninja-v1-4-0.mcp.soy/",
@@ -24,13 +24,13 @@ end
 
 ```ruby
 # Simple URL string (auto-detected as HTTP)
-mcp_servers = ClaudeCodeSDK.add_mcp_server(
-  "my_server", 
+mcp_servers = ClaudeCode.add_mcp_server(
+  "my_server",
   "https://my-mcp-server.com/"
 )
 
 # Explicit HTTP configuration with headers
-mcp_servers = ClaudeCodeSDK.add_mcp_server("api_server", {
+mcp_servers = ClaudeCode.add_mcp_server("api_server", {
   type: "http",
   url: "https://api.example.com/mcp",
   headers: {
@@ -43,7 +43,7 @@ mcp_servers = ClaudeCodeSDK.add_mcp_server("api_server", {
 ### 2. Server-Sent Events (SSE)
 
 ```ruby
-mcp_servers = ClaudeCodeSDK.add_mcp_server("sse_server", {
+mcp_servers = ClaudeCode.add_mcp_server("sse_server", {
   type: "sse",
   url: "https://stream.example.com/mcp",
   headers: {
@@ -56,13 +56,13 @@ mcp_servers = ClaudeCodeSDK.add_mcp_server("sse_server", {
 
 ```ruby
 # Simple command string
-mcp_servers = ClaudeCodeSDK.add_mcp_server(
+mcp_servers = ClaudeCode.add_mcp_server(
   "local_server",
   "node my-mcp-server.js"
 )
 
 # Full stdio configuration
-mcp_servers = ClaudeCodeSDK.add_mcp_server("github_server", {
+mcp_servers = ClaudeCode.add_mcp_server("github_server", {
   command: "npx",
   args: ["@modelcontextprotocol/server-github"],
   env: {
@@ -77,19 +77,19 @@ mcp_servers = ClaudeCodeSDK.add_mcp_server("github_server", {
 
 ```ruby
 # Build server configuration
-mcp_servers = ClaudeCodeSDK.add_mcp_server(
-  "ninja", 
+mcp_servers = ClaudeCode.add_mcp_server(
+  "ninja",
   "https://mcp-creator-ninja-v1-4-0.mcp.soy/"
 )
 
 # Configure options
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   allowed_tools: ["mcp__ninja__about"],
   max_turns: 1
 )
 
 # Query with MCP servers
-ClaudeCodeSDK.query(
+ClaudeCode.query(
   prompt: "Use the about tool",
   options: options,
   mcp_servers: mcp_servers
@@ -102,12 +102,12 @@ end
 
 ```ruby
 # Configure everything in options
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   mcp_servers: {
-    "ninja" => ClaudeCodeSDK::McpHttpServerConfig.new(
+    "ninja" => ClaudeCode::McpHttpServerConfig.new(
       url: "https://mcp-creator-ninja-v1-4-0.mcp.soy/"
     ),
-    "local" => ClaudeCodeSDK::McpStdioServerConfig.new(
+    "local" => ClaudeCode::McpStdioServerConfig.new(
       command: "node",
       args: ["my-server.js"]
     )
@@ -115,7 +115,7 @@ options = ClaudeCodeSDK::ClaudeCodeOptions.new(
   allowed_tools: ["mcp__ninja__about", "mcp__local__my_tool"]
 )
 
-ClaudeCodeSDK.query(prompt: "Use available tools", options: options)
+ClaudeCode.query(prompt: "Use available tools", options: options)
 ```
 
 ### Method 3: Multiple Servers
@@ -123,23 +123,23 @@ ClaudeCodeSDK.query(prompt: "Use available tools", options: options)
 ```ruby
 # Build multiple servers
 servers = {}
-servers.merge!(ClaudeCodeSDK.add_mcp_server("ninja", "https://..."))
-servers.merge!(ClaudeCodeSDK.add_mcp_server("github", {
+servers.merge!(ClaudeCode.add_mcp_server("ninja", "https://..."))
+servers.merge!(ClaudeCode.add_mcp_server("github", {
   command: "npx",
   args: ["@modelcontextprotocol/server-github"],
   env: { "GITHUB_TOKEN" => ENV["GITHUB_TOKEN"] }
 }))
-servers.merge!(ClaudeCodeSDK.add_mcp_server("filesystem", "npx @modelcontextprotocol/server-filesystem /allowed/path"))
+servers.merge!(ClaudeCode.add_mcp_server("filesystem", "npx @modelcontextprotocol/server-filesystem /allowed/path"))
 
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   allowed_tools: [
     "mcp__ninja__about",
-    "mcp__github__search_repositories", 
+    "mcp__github__search_repositories",
     "mcp__filesystem__read_file"
   ]
 )
 
-ClaudeCodeSDK.query(
+ClaudeCode.query(
   prompt: "Use available tools to help me",
   options: options,
   mcp_servers: servers
@@ -163,7 +163,7 @@ allowed_tools: ["mcp__ninja"]  # Allows all ninja server tools
 ### Permission Modes
 
 ```ruby
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   permission_mode: "default",       # Prompt for dangerous tools
   # permission_mode: "acceptEdits",  # Auto-accept file edits
   # permission_mode: "bypassPermissions"  # Allow all tools (dangerous)
@@ -175,7 +175,7 @@ options = ClaudeCodeSDK::ClaudeCodeOptions.new(
 MCP tool calls stream in real-time, showing tool usage and results as they happen:
 
 ```ruby
-ClaudeCodeSDK.quick_mcp_query(
+ClaudeCode.quick_mcp_query(
   "Use multiple tools to analyze this project",
   server_name: "ninja",
   server_url: "https://mcp-creator-ninja-v1-4-0.mcp.soy/",
@@ -183,27 +183,27 @@ ClaudeCodeSDK.quick_mcp_query(
   max_turns: 3
 ).each do |message|
   case message
-  when ClaudeCodeSDK::SystemMessage
+  when ClaudeCode::SystemMessage
     puts "🔧 System: MCP servers: #{message.data['mcp_servers'].length}"
-    
-  when ClaudeCodeSDK::AssistantMessage
+
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
       case block
-      when ClaudeCodeSDK::TextBlock
+      when ClaudeCode::TextBlock
         puts "💬 #{block.text}"
-        
-      when ClaudeCodeSDK::ToolUseBlock
+
+      when ClaudeCode::ToolUseBlock
         puts "🔧 Using tool: #{block.name}"
         puts "📥 Input: #{block.input}"
-        
-      when ClaudeCodeSDK::ToolResultBlock
+
+      when ClaudeCode::ToolResultBlock
         puts "📤 Tool result:"
         puts "   Content: #{block.content}"
         puts "   Error: #{block.is_error ? 'Yes' : 'No'}"
       end
     end
-    
-  when ClaudeCodeSDK::ResultMessage
+
+  when ClaudeCode::ResultMessage
     puts "✅ Completed - Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
   end
 end
@@ -213,7 +213,7 @@ end
 
 ### Creator Ninja (Example/Testing)
 ```ruby
-ClaudeCodeSDK.add_mcp_server(
+ClaudeCode.add_mcp_server(
   "ninja",
   "https://mcp-creator-ninja-v1-4-0.mcp.soy/"
 )
@@ -222,7 +222,7 @@ ClaudeCodeSDK.add_mcp_server(
 
 ### Filesystem Server
 ```ruby
-ClaudeCodeSDK.add_mcp_server("filesystem", {
+ClaudeCode.add_mcp_server("filesystem", {
   command: "npx",
   args: ["-y", "@modelcontextprotocol/server-filesystem", "/allowed/path"],
 })
@@ -231,8 +231,8 @@ ClaudeCodeSDK.add_mcp_server("filesystem", {
 
 ### GitHub Server
 ```ruby
-ClaudeCodeSDK.add_mcp_server("github", {
-  command: "npx", 
+ClaudeCode.add_mcp_server("github", {
+  command: "npx",
   args: ["-y", "@modelcontextprotocol/server-github"],
   env: {
     "GITHUB_TOKEN" => ENV["GITHUB_TOKEN"]
@@ -243,7 +243,7 @@ ClaudeCodeSDK.add_mcp_server("github", {
 
 ### Database Server (Example)
 ```ruby
-ClaudeCodeSDK.add_mcp_server("database", {
+ClaudeCode.add_mcp_server("database", {
   command: "node",
   args: ["database-mcp-server.js"],
   env: {
@@ -257,7 +257,7 @@ ClaudeCodeSDK.add_mcp_server("database", {
 
 ```ruby
 begin
-  ClaudeCodeSDK.quick_mcp_query(
+  ClaudeCode.quick_mcp_query(
     "Use unavailable tool",
     server_name: "ninja",
     server_url: "https://bad-url.com/",
@@ -265,10 +265,10 @@ begin
   ).each do |message|
     # Process message
   end
-rescue ClaudeCodeSDK::ProcessError => e
+rescue ClaudeCode::ProcessError => e
   puts "MCP server failed: #{e.message}"
   puts "Exit code: #{e.exit_code}"
-rescue ClaudeCodeSDK::CLIConnectionError => e
+rescue ClaudeCode::CLIConnectionError => e
   puts "Connection failed: #{e.message}"
 end
 ```
@@ -279,28 +279,28 @@ end
 class McpService
   def self.query_with_mcp(prompt, mcp_config = {})
     servers = build_mcp_servers(mcp_config)
-    
-    options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+
+    options = ClaudeCode::ClaudeCodeOptions.new(
       allowed_tools: mcp_config[:allowed_tools] || [],
       permission_mode: "acceptEdits" # For automated environments
     )
-    
-    ClaudeCodeSDK.query(
+
+    ClaudeCode.query(
       prompt: prompt,
       options: options,
       mcp_servers: servers
     )
   end
-  
+
   private
-  
+
   def self.build_mcp_servers(config)
     servers = {}
-    
+
     config[:servers]&.each do |name, server_config|
-      servers.merge!(ClaudeCodeSDK.add_mcp_server(name, server_config))
+      servers.merge!(ClaudeCode.add_mcp_server(name, server_config))
     end
-    
+
     servers
   end
 end
@@ -344,7 +344,7 @@ CLAUDE_MCP_CONFIG = YAML.load_file(Rails.root.join('config/claude_mcp.yml'))[Rai
 ### Production Environment
 ```ruby
 # Use environment variables for security
-ClaudeCodeSDK.add_mcp_server("production_api", {
+ClaudeCode.add_mcp_server("production_api", {
   type: "http",
   url: ENV["MCP_API_URL"],
   headers: {
@@ -360,43 +360,43 @@ ClaudeCodeSDK.add_mcp_server("production_api", {
 # spec/support/mcp_helpers.rb
 module McpHelpers
   def mock_mcp_server(name, tools = ["about"])
-    allow(ClaudeCodeSDK).to receive(:add_mcp_server).with(name, anything).and_return({
+    allow(ClaudeCode).to receive(:add_mcp_server).with(name, anything).and_return({
       name => double("MockMcpServer")
     })
-    
-    allow(ClaudeCodeSDK).to receive(:query).and_return([
+
+    allow(ClaudeCode).to receive(:query).and_return([
       mock_assistant_message_with_tools(tools)
     ])
   end
-  
+
   def mock_assistant_message_with_tools(tools)
     content = tools.map do |tool|
-      ClaudeCodeSDK::ToolUseBlock.new(
+      ClaudeCode::ToolUseBlock.new(
         id: "test-#{tool}",
         name: "mcp__test__#{tool}",
         input: {}
       )
     end
-    
-    ClaudeCodeSDK::AssistantMessage.new(content)
+
+    ClaudeCode::AssistantMessage.new(content)
   end
 end
 
 # In tests
 RSpec.describe "MCP Integration" do
   include McpHelpers
-  
+
   it "uses MCP tools" do
     mock_mcp_server("test", ["about"])
-    
-    result = ClaudeCodeSDK.quick_mcp_query(
+
+    result = ClaudeCode.quick_mcp_query(
       "Test prompt",
       server_name: "test",
       server_url: "http://test.com",
       tools: "about"
     )
-    
-    expect(result).to include(have_attributes(class: ClaudeCodeSDK::AssistantMessage))
+
+    expect(result).to include(have_attributes(class: ClaudeCode::AssistantMessage))
   end
 end
 ```

@@ -7,6 +7,7 @@ require_relative '../lib/claude_code'
 def ninja_test(prompt)
   ClaudeCode.quick_mcp_query(
     prompt,
+    model: 'sonnet',
     server_name: 'ninja',
     server_url: 'https://mcp-creator-ninja-v1-4-0.mcp.soy/',
     tools: 'about'
@@ -43,18 +44,16 @@ def quick_claude(prompt, model: nil)
     model: model,
     max_turns: 1
   )
-  
+
   ClaudeCode.query(
     prompt: prompt,
     options: options,
-    cli_path: "/Users/admin/.claude/local/claude"
+    cli_path: '/Users/admin/.claude/local/claude'
   ).each do |msg|
-    if msg.is_a?(ClaudeCode::AssistantMessage)
-      msg.content.each do |block|
-        if block.is_a?(ClaudeCode::TextBlock)
-          puts block.text
-        end
-      end
+    next unless msg.is_a?(ClaudeCode::AssistantMessage)
+
+    msg.content.each do |block|
+      puts block.text if block.is_a?(ClaudeCode::TextBlock)
     end
   end
 end
@@ -65,15 +64,13 @@ def stream_claude(prompt, model: nil)
   ClaudeCode.stream_query(
     prompt: prompt,
     options: ClaudeCode::ClaudeCodeOptions.new(model: model, max_turns: 1),
-    cli_path: "/Users/admin/.claude/local/claude"
+    cli_path: '/Users/admin/.claude/local/claude'
   ) do |msg, index|
     timestamp = Time.now - start_time
     case msg
     when ClaudeCode::AssistantMessage
       msg.content.each do |block|
-        if block.is_a?(ClaudeCode::TextBlock)
-          puts "[#{format('%.2f', timestamp)}s] #{block.text}"
-        end
+        puts "[#{format('%.2f', timestamp)}s] #{block.text}" if block.is_a?(ClaudeCode::TextBlock)
       end
     when ClaudeCode::ResultMessage
       puts "[#{format('%.2f', timestamp)}s] 💰 $#{format('%.6f', msg.total_cost_usd || 0)}"
@@ -86,21 +83,19 @@ def auto_stream(prompt, model: nil)
   ClaudeCode.stream_query(
     prompt: prompt,
     options: ClaudeCode::ClaudeCodeOptions.new(model: model, max_turns: 1),
-    cli_path: "/Users/admin/.claude/local/claude"
+    cli_path: '/Users/admin/.claude/local/claude'
   )
 end
 
 # Continue the most recent conversation
 def continue_chat(prompt = nil)
   last_session_id = nil
-  
+
   ClaudeCode.continue_conversation(prompt) do |msg|
     case msg
     when ClaudeCode::AssistantMessage
       msg.content.each do |block|
-        if block.is_a?(ClaudeCode::TextBlock)
-          puts "💬 #{block.text}"
-        end
+        puts "💬 #{block.text}" if block.is_a?(ClaudeCode::TextBlock)
       end
     when ClaudeCode::ResultMessage
       last_session_id = msg.session_id
@@ -108,7 +103,7 @@ def continue_chat(prompt = nil)
       puts "💰 $#{format('%.6f', msg.total_cost_usd || 0)}"
     end
   end
-  
+
   last_session_id
 end
 
@@ -118,9 +113,7 @@ def resume_chat(session_id, prompt = nil)
     case msg
     when ClaudeCode::AssistantMessage
       msg.content.each do |block|
-        if block.is_a?(ClaudeCode::TextBlock)
-          puts "💬 #{block.text}"
-        end
+        puts "💬 #{block.text}" if block.is_a?(ClaudeCode::TextBlock)
       end
     when ClaudeCode::ResultMessage
       puts "📋 Session: #{msg.session_id}"
@@ -141,28 +134,28 @@ def resume_last(prompt = nil)
   if $last_session_id
     resume_chat($last_session_id, prompt)
   else
-    puts "❌ No saved session ID. Use save_session(id) first."
+    puts '❌ No saved session ID. Use save_session(id) first.'
   end
 end
 
-puts "🚀 Ruby Claude Code SDK with MCP, Streaming, and Conversation helpers loaded!"
+puts '🚀 Ruby Claude Code SDK with MCP, Streaming, and Conversation helpers loaded!'
 puts
-puts "Basic commands:"
+puts 'Basic commands:'
 puts "  quick_claude('What is Ruby?')"
 puts "  ninja_test('Tell me about yourself')"
 puts
-puts "Streaming commands:"
+puts 'Streaming commands:'
 puts "  stream_claude('Explain Ruby blocks')"
 puts "  auto_stream('Count to 5')"
 puts
-puts "Conversation commands:"
+puts 'Conversation commands:'
 puts "  continue_chat('Follow up question')"
 puts "  resume_chat('session-id', 'New prompt')"
 puts "  save_session('session-id')"
 puts "  resume_last('New prompt')"
 puts
-puts "Advanced:"
+puts 'Advanced:'
 puts "  quick_claude('Explain arrays', model: 'sonnet')"
 puts "  test_mcp('prompt', 'server_name', 'server_url', 'tool_name')"
 puts
-puts "💡 Remember to set ANTHROPIC_API_KEY environment variable!"
+puts '💡 Remember to set ANTHROPIC_API_KEY environment variable!'

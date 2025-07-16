@@ -24,7 +24,7 @@ gem install claude_code_sdk
 
 **Prerequisites:**
 - Ruby 3.0+
-- Node.js 
+- Node.js
 - Claude Code: `npm install -g @anthropic-ai/claude-code`
 
 ## Quick Start
@@ -33,10 +33,10 @@ gem install claude_code_sdk
 require 'claude_code_sdk'
 
 # Simple query with streaming
-ClaudeCodeSDK.query(prompt: "What is 2 + 2?").each do |message|
-  if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+ClaudeCode.query(prompt: "What is 2 + 2?").each do |message|
+  if message.is_a?(ClaudeCode::AssistantMessage)
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         puts block.text
       end
     end
@@ -51,7 +51,7 @@ end
 - Low memory footprint - process one message at a time
 - Perfect for interactive applications and long-running operations
 
-### 🔧 **Ergonomic MCP Integration** 
+### 🔧 **Ergonomic MCP Integration**
 - Simple one-line MCP server configuration
 - Support for HTTP, SSE, and stdio MCP servers
 - Built-in helpers for common use cases
@@ -75,13 +75,13 @@ end
 require 'claude_code_sdk'
 
 # With options
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   model: "sonnet",
   system_prompt: "You are a helpful assistant",
   max_turns: 1
 )
 
-ClaudeCodeSDK.query(
+ClaudeCode.query(
   prompt: "Explain Ruby blocks",
   options: options,
   cli_path: "/path/to/claude"
@@ -94,7 +94,7 @@ end
 
 ```ruby
 # Ultra-convenient MCP usage
-ClaudeCodeSDK.quick_mcp_query(
+ClaudeCode.quick_mcp_query(
   "Use the about tool to describe yourself",
   server_name: "ninja",
   server_url: "https://mcp-creator-ninja-v1-4-0.mcp.soy/",
@@ -104,13 +104,13 @@ ClaudeCodeSDK.quick_mcp_query(
 end
 
 # Advanced MCP configuration
-mcp_servers = ClaudeCodeSDK.add_mcp_server("my_server", {
+mcp_servers = ClaudeCode.add_mcp_server("my_server", {
   command: "node",
   args: ["my-mcp-server.js"],
   env: { "API_KEY" => "secret" }
 })
 
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   allowed_tools: ["mcp__my_server__my_tool"],
   mcp_servers: mcp_servers
 )
@@ -120,16 +120,16 @@ options = ClaudeCodeSDK::ClaudeCodeOptions.new(
 
 ```ruby
 # Auto-formatted streaming
-ClaudeCodeSDK.stream_query(
+ClaudeCode.stream_query(
   prompt: "Count from 1 to 5",
-  options: ClaudeCodeSDK::ClaudeCodeOptions.new(max_turns: 1)
+  options: ClaudeCode::ClaudeCodeOptions.new(max_turns: 1)
 )
 
 # Custom streaming with timestamps
 start_time = Time.now
-ClaudeCodeSDK.stream_query(
+ClaudeCode.stream_query(
   prompt: "Explain inheritance",
-  options: ClaudeCodeSDK::ClaudeCodeOptions.new(max_turns: 1)
+  options: ClaudeCode::ClaudeCodeOptions.new(max_turns: 1)
 ) do |message, index|
   timestamp = Time.now - start_time
   puts "[#{format('%.2f', timestamp)}s] #{message}"
@@ -142,11 +142,11 @@ end
 # Background job with real-time streaming
 class ClaudeStreamingJob
   include Sidekiq::Job
-  
+
   def perform(user_id, query_id, prompt, options = {})
     channel = "claude_stream_#{user_id}_#{query_id}"
-    
-    ClaudeCodeSDK.query(prompt: prompt, options: options).each do |message|
+
+    ClaudeCode.query(prompt: prompt, options: options).each do |message|
       # Broadcast to ActionCable
       ActionCable.server.broadcast(channel, {
         type: 'message',
@@ -162,16 +162,16 @@ end
 
 ### Core Methods
 
-#### `ClaudeCodeSDK.query(prompt:, options: nil, cli_path: nil, mcp_servers: {})`
+#### `ClaudeCode.query(prompt:, options: nil, cli_path: nil, mcp_servers: {})`
 Main method for querying Claude with streaming support.
 
-#### `ClaudeCodeSDK.quick_mcp_query(prompt, server_name:, server_url:, tools:, **options)`
+#### `ClaudeCode.quick_mcp_query(prompt, server_name:, server_url:, tools:, **options)`
 Convenient method for quick MCP server usage.
 
-#### `ClaudeCodeSDK.stream_query(prompt:, options: nil, cli_path: nil, mcp_servers: {}, &block)`
+#### `ClaudeCode.stream_query(prompt:, options: nil, cli_path: nil, mcp_servers: {}, &block)`
 Streaming helper with auto-formatting or custom block handling.
 
-#### `ClaudeCodeSDK.add_mcp_server(name, config)`
+#### `ClaudeCode.add_mcp_server(name, config)`
 Helper to create MCP server configurations.
 
 ### Configuration Classes
@@ -188,7 +188,7 @@ Main configuration class with all CLI options:
 
 #### MCP Server Configurations
 - `McpHttpServerConfig` - HTTP/HTTPS MCP servers
-- `McpSSEServerConfig` - Server-Sent Events MCP servers  
+- `McpSSEServerConfig` - Server-Sent Events MCP servers
 - `McpStdioServerConfig` - Stdio MCP servers
 
 ### Message Types
@@ -215,14 +215,14 @@ Main configuration class with all CLI options:
 
 ```ruby
 begin
-  ClaudeCodeSDK.query(prompt: "Hello").each do |message|
+  ClaudeCode.query(prompt: "Hello").each do |message|
     # Process message
   end
-rescue ClaudeCodeSDK::CLINotFoundError
+rescue ClaudeCode::CLINotFoundError
   puts "Please install Claude Code"
-rescue ClaudeCodeSDK::ProcessError => e
+rescue ClaudeCode::ProcessError => e
   puts "Process failed: #{e.exit_code}"
-rescue ClaudeCodeSDK::CLIJSONDecodeError => e
+rescue ClaudeCode::CLIJSONDecodeError => e
   puts "JSON parsing failed: #{e.message}"
 end
 ```
