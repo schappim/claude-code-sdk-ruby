@@ -5,19 +5,19 @@ require_relative 'lib/claude_code/version'
 Gem::Specification.new do |spec|
   spec.name = 'claude_code'
   spec.version = ClaudeCode::VERSION
-  spec.authors = ['Anthropic']
-  spec.email = ['support@anthropic.com']
+  spec.authors = ['Your Name']
+  spec.email = ['your.email@example.com']
 
   spec.summary = 'Ruby SDK for Claude Code with streaming support and ergonomic MCP integration'
-  spec.description = 'Official Ruby SDK for Claude Code. See the Claude Code SDK documentation for more information.'
-  spec.homepage = 'https://github.com/anthropics/claude-code-sdk-python'
+  spec.description = 'Ruby SDK for Claude Code with streaming support and MCP integration. See the Claude Code SDK documentation for more information.'
+  spec.homepage = 'https://github.com/schappim/claude-code-sdk-ruby'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.0.0'
 
   spec.metadata['homepage_uri'] = spec.homepage
-  spec.metadata['source_code_uri'] = spec.homepage
+  spec.metadata['source_code_uri'] = 'https://github.com/schappim/claude-code-sdk-ruby'
   spec.metadata['documentation_uri'] = 'https://docs.anthropic.com/en/docs/claude-code/sdk'
-  spec.metadata['changelog_uri'] = 'https://github.com/anthropics/claude-code-sdk-python/blob/main/ruby/CHANGELOG.md'
+  spec.metadata['changelog_uri'] = 'https://github.com/schappim/claude-code-sdk-ruby/blob/main/CHANGELOG.md'
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 
   # Specify which files should be added to the gem when it is released.
