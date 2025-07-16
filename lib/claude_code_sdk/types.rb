@@ -33,8 +33,12 @@ module ClaudeCodeSDK
     end
   end
 
+  # Base message class
+  class BaseMessage
+  end
+
   # Message types
-  class UserMessage
+  class UserMessage < BaseMessage
     attr_reader :content
 
     def initialize(content)
@@ -42,7 +46,7 @@ module ClaudeCodeSDK
     end
   end
 
-  class AssistantMessage
+  class AssistantMessage < BaseMessage
     attr_reader :content
 
     def initialize(content)
@@ -50,7 +54,7 @@ module ClaudeCodeSDK
     end
   end
 
-  class SystemMessage
+  class SystemMessage < BaseMessage
     attr_reader :subtype, :data
 
     def initialize(subtype:, data:)
@@ -59,11 +63,11 @@ module ClaudeCodeSDK
     end
   end
 
-  class ResultMessage
+  class ResultMessage < BaseMessage
     attr_reader :subtype, :duration_ms, :duration_api_ms, :is_error, :num_turns, 
                 :session_id, :total_cost_usd, :usage, :result
 
-    def initialize(subtype:, duration_ms:, duration_api_ms:, is_error:, num_turns:, 
+    def initialize(subtype:, duration_ms:, duration_api_ms: nil, is_error: false, num_turns:, 
                    session_id:, total_cost_usd: nil, usage: nil, result: nil)
       @subtype = subtype
       @duration_ms = duration_ms
@@ -159,7 +163,7 @@ module ClaudeCodeSDK
 
     # Create a multi-turn conversation as JSONL messages
     def self.create_conversation(*turns)
-      turns.map { |turn| create_user_message(turn) }
+      turns.compact.reject(&:empty?).map { |turn| create_user_message(turn) }
     end
   end
 
@@ -167,7 +171,7 @@ module ClaudeCodeSDK
   class ClaudeCodeOptions
     attr_reader :allowed_tools, :max_thinking_tokens, :system_prompt, :append_system_prompt,
                 :mcp_tools, :mcp_servers, :permission_mode, :continue_conversation, :resume,
-                :max_turns, :disallowed_tools, :model, :permission_prompt_tool_name, :cwd,
+                :resume_conversation_id, :max_turns, :disallowed_tools, :model, :permission_prompt_tool_name, :cwd,
                 :input_format, :output_format
 
     def initialize(
@@ -180,6 +184,7 @@ module ClaudeCodeSDK
       permission_mode: nil,
       continue_conversation: false,
       resume: nil,
+      resume_conversation_id: nil,
       max_turns: nil,
       disallowed_tools: [],
       model: nil,
@@ -197,6 +202,7 @@ module ClaudeCodeSDK
       @permission_mode = permission_mode
       @continue_conversation = continue_conversation
       @resume = resume
+      @resume_conversation_id = resume_conversation_id
       @max_turns = max_turns
       @disallowed_tools = disallowed_tools
       @model = model
@@ -217,6 +223,7 @@ module ClaudeCodeSDK
         permission_mode: @permission_mode,
         continue_conversation: @continue_conversation,
         resume: @resume,
+        resume_conversation_id: @resume_conversation_id,
         max_turns: @max_turns,
         disallowed_tools: @disallowed_tools,
         model: @model,

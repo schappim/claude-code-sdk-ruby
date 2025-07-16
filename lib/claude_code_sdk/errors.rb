@@ -8,7 +8,10 @@ module ClaudeCodeSDK
   end
 
   class CLINotFoundError < CLIConnectionError
+    attr_reader :cli_path
+    
     def initialize(message = "Claude Code not found", cli_path: nil)
+      @cli_path = cli_path
       message = "#{message}: #{cli_path}" if cli_path
       super(message)
     end
@@ -17,7 +20,7 @@ module ClaudeCodeSDK
   class ProcessError < ClaudeSDKError
     attr_reader :exit_code, :stderr
 
-    def initialize(message, exit_code: nil, stderr: nil)
+    def initialize(message = "Process failed", exit_code: nil, stderr: nil)
       @exit_code = exit_code
       @stderr = stderr
 
@@ -31,10 +34,15 @@ module ClaudeCodeSDK
   class CLIJSONDecodeError < ClaudeSDKError
     attr_reader :line, :original_error
 
-    def initialize(line, original_error)
+    def initialize(line = nil, original_error = nil)
       @line = line
       @original_error = original_error
-      super("Failed to decode JSON: #{line[0, 100]}...")
+      
+      msg = "Failed to decode JSON"
+      msg += ": #{line[0, 100]}..." if line && !line.empty?
+      msg += " (#{original_error.message})" if original_error
+      
+      super(msg)
     end
   end
 end

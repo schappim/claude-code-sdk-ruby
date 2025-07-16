@@ -10,32 +10,31 @@ module ClaudeCodeSDK
       # Client setup
     end
 
-    def process_query(prompt:, options:, cli_path: nil)
-      transport = SubprocessCLITransport.new(prompt: prompt, options: options, cli_path: cli_path)
-      
-      transport.connect
-      
-      unless transport.connected?
-        # Try to get the exit status and stderr for debugging
-        if transport.instance_variable_get(:@process)
-          proc = transport.instance_variable_get(:@process)
-          stderr = transport.instance_variable_get(:@stderr)
+    def process_query(prompt: nil, messages: nil, options:, cli_path: nil, mcp_servers: {})
+      if messages
+        # Handle streaming JSON input
+        transport = SubprocessCLITransport.new(prompt: "", options: options, cli_path: cli_path)
+        transport.connect
+        
+        # Send messages
+        transport.send_messages(messages)
+        
+        # Return enumerator for responses
+        return Enumerator.new do |yielder|
           begin
-            exit_code = proc.value.exitstatus
-            stderr_output = stderr.read if stderr
-            raise CLIConnectionError.new("Claude CLI exited with code #{exit_code}. Error: #{stderr_output}")
-          rescue
-            raise CLIConnectionError.new("Failed to connect to Claude CLI - process not alive")
+            transport.receive_messages do |data|
+              message = parse_message(data)
+              yielder << message if message
+            end
+          ensure
+            transport.disconnect
           end
-        else
-          raise CLIConnectionError.new("Failed to connect to Claude CLI - no process created")
         end
       end
       
-      # Add a small delay to let the process stabilize
-      sleep(0.1)
+      transport = SubprocessCLITransport.new(prompt: prompt, options: options, cli_path: cli_path)
       
-      puts "Debug: Process alive before receive_messages: #{transport.connected?}" if ENV['DEBUG_CLAUDE_SDK']
+      transport.connect
       
       # Return lazy enumerator that streams messages as they arrive
       Enumerator.new do |yielder|
@@ -52,13 +51,23 @@ module ClaudeCodeSDK
 
     private
 
+    def build_environment
+      env = ENV.to_h
+      env['CLAUDE_CODE_ENTRYPOINT'] = 'sdk-ruby'
+      env['ANTHROPIC_API_KEY'] = ENV['ANTHROPIC_API_KEY'] if ENV['ANTHROPIC_API_KEY']
+      env['CLAUDE_CODE_USE_BEDROCK'] = ENV['CLAUDE_CODE_USE_BEDROCK'] if ENV['CLAUDE_CODE_USE_BEDROCK']
+      env['CLAUDE_CODE_USE_VERTEX'] = ENV['CLAUDE_CODE_USE_VERTEX'] if ENV['CLAUDE_CODE_USE_VERTEX']
+      env
+    end
+
     def parse_message(data)
       case data['type']
       when 'user'
-        UserMessage.new(data['message']['content'])
+        UserMessage.new(data.dig('message', 'content'))
       when 'assistant'
         content_blocks = []
-        data['message']['content'].each do |block|
+        message_content = data.dig('message', 'content') || []
+        message_content.each do |block|
           case block['type']
           when 'text'
             content_blocks << TextBlock.new(block['text'])
@@ -106,7 +115,7 @@ module ClaudeCodeSDK
     def initialize(prompt:, options:, cli_path: nil)
       @prompt = prompt
       @options = options
-      @cli_path = cli_path || find_cli
+      @cli_path = cli_path
       @cwd = options.cwd&.to_s
       @process = nil
       @stdin = nil
@@ -114,7 +123,13 @@ module ClaudeCodeSDK
       @stderr = nil
     end
 
-    def find_cli
+    def find_cli(cli_path = nil)
+      # Use provided CLI path if valid
+      if cli_path
+        return cli_path if File.executable?(cli_path)
+        raise CLINotFoundError.new("CLI not found at specified path: #{cli_path}", cli_path: cli_path)
+      end
+      
       # Try PATH first using cross-platform which
       cli = which('claude')
       return cli if cli
@@ -245,6 +260,9 @@ module ClaudeCodeSDK
     def connect
       return if @process
 
+      # Find CLI if not already set
+      @cli_path ||= find_cli
+      
       cmd = build_command
       puts "Debug: Connecting with command: #{cmd.join(' ')}" if ENV['DEBUG_CLAUDE_SDK']
       
@@ -345,14 +363,29 @@ module ClaudeCodeSDK
               data = JSON.parse(json_buffer)
               json_buffer = ""
               yield data
-            rescue JSON::ParserError
-              # Continue accumulating
+            rescue JSON::ParserError => e
+              # For single-line JSON, if parsing fails, it's an error
+              if json_buffer.include?("\n") || json_buffer.length > 1000
+                raise CLIJSONDecodeError.new(json_buffer, e)
+              end
+              # Otherwise continue accumulating
               next
             end
           end
         end
       rescue IOError
         # Process has closed
+      end
+
+      # If there's still data in the buffer, it's invalid JSON
+      if json_buffer && !json_buffer.strip.empty?
+        # Try one more time to parse in case it's valid JSON
+        begin
+          data = JSON.parse(json_buffer)
+          yield data
+        rescue JSON::ParserError => e
+          raise CLIJSONDecodeError.new(json_buffer, StandardError.new("Incomplete JSON at end of stream"))
+        end
       end
 
       # Check for errors
@@ -374,18 +407,23 @@ module ClaudeCodeSDK
 
     # Send a JSON message via stdin for streaming input mode
     def send_message(message)
-      raise CLIConnectionError.new("Not connected or not in streaming mode") unless @stdin
+      raise CLIConnectionError.new("Not connected to CLI") unless @stdin
       
       json_line = message.to_json + "\n"
       puts "Debug: Sending JSON message: #{json_line.strip}" if ENV['DEBUG_CLAUDE_SDK']
       
-      @stdin.write(json_line)
-      @stdin.flush
+      begin
+        @stdin.write(json_line)
+        @stdin.flush
+      rescue Errno::EPIPE
+        # Pipe is broken, process has terminated
+        raise CLIConnectionError.new("CLI process terminated unexpectedly")
+      end
     end
 
     # Send multiple messages and close stdin to signal end of input
     def send_messages(messages)
-      raise CLIConnectionError.new("Not connected or not in streaming mode") unless @stdin
+      raise CLIConnectionError.new("Not connected to CLI") unless @stdin
       
       messages.each do |message|
         send_message(message)

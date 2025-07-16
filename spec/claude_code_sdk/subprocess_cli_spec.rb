@@ -17,7 +17,7 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
 
         expect { transport.send(:find_cli) }
           .to raise_error(ClaudeCodeSDK::CLINotFoundError) do |error|
-            expect(error.message).to include('Claude Code not found')
+            expect(error.message).to include('Claude Code requires Node.js')
             expect(error.message).to include('npm install -g @anthropic-ai/claude-code')
           end
       end

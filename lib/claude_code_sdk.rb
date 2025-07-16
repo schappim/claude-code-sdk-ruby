@@ -10,7 +10,18 @@ require_relative 'claude_code_sdk/errors'
 require_relative 'claude_code_sdk/client'
 
 module ClaudeCodeSDK
-  def self.query(prompt:, options: nil, cli_path: nil, mcp_servers: {})
+  # Main query method - supports both positional and keyword arguments
+  def self.query(prompt_or_args = nil, prompt: nil, options: nil, cli_path: nil, mcp_servers: {}, &block)
+    # Handle positional argument for backward compatibility
+    if prompt_or_args.is_a?(String)
+      prompt = prompt_or_args
+    elsif prompt_or_args.is_a?(Hash)
+      # Extract from hash if all args passed as first parameter
+      prompt = prompt_or_args[:prompt] || prompt
+      options = prompt_or_args[:options] || options
+      cli_path = prompt_or_args[:cli_path] || cli_path
+      mcp_servers = prompt_or_args[:mcp_servers] || mcp_servers
+    end
     options ||= ClaudeCodeOptions.new
     
     # Merge MCP servers if provided as a separate parameter
@@ -36,40 +47,23 @@ module ClaudeCodeSDK
     ENV['CLAUDE_CODE_ENTRYPOINT'] = 'sdk-ruby'
     
     client = Client.new
-    client.process_query(prompt: prompt, options: options, cli_path: cli_path)
+    result = client.process_query(prompt: prompt, options: options, cli_path: cli_path, mcp_servers: mcp_servers)
+    
+    if block_given?
+      result.each { |message| yield message }
+    else
+      result
+    end
   end
 
   # Convenience method for adding MCP servers
   def self.add_mcp_server(name, config)
-    case config
-    when String
-      # HTTP/SSE URL
-      if config.start_with?('http')
-        { name => McpHttpServerConfig.new(url: config) }
-      else
-        # Command string
-        { name => McpStdioServerConfig.new(command: config) }
-      end
-    when Hash
-      if config[:type] == 'http' || config['type'] == 'http'
-        { name => McpHttpServerConfig.new(url: config[:url] || config['url'], headers: config[:headers] || config['headers'] || {}) }
-      elsif config[:type] == 'sse' || config['type'] == 'sse'
-        { name => McpSSEServerConfig.new(url: config[:url] || config['url'], headers: config[:headers] || config['headers'] || {}) }
-      else
-        { name => McpStdioServerConfig.new(
-          command: config[:command] || config['command'],
-          args: config[:args] || config['args'] || [],
-          env: config[:env] || config['env'] || {}
-        )}
-      end
-    else
-      raise ArgumentError, "Invalid MCP server config: #{config}"
-    end
+    { name => config }
   end
 
   # Ultra-convenient method for quick MCP queries
   def self.quick_mcp_query(prompt, server_name:, server_url:, tools:, **options)
-    cli_path = options.delete(:cli_path) || "/Users/admin/.claude/local/claude"
+    cli_path = options.delete(:cli_path)
     
     mcp_servers = add_mcp_server(server_name, server_url)
     
@@ -137,7 +131,7 @@ module ClaudeCodeSDK
       mcp_servers: options.mcp_servers,
       permission_mode: options.permission_mode,
       continue_conversation: options.continue_conversation,
-      resume: session_id,
+      resume_conversation_id: session_id,
       max_turns: options.max_turns,
       disallowed_tools: options.disallowed_tools,
       model: options.model,
@@ -154,72 +148,36 @@ module ClaudeCodeSDK
   end
 
   # Query with streaming JSON input (multiple turns via JSONL)
-  def self.stream_json_query(messages, options: nil, cli_path: nil, mcp_servers: {})
+  def self.stream_json_query(messages, options: nil, cli_path: nil, mcp_servers: {}, &block)
     options ||= ClaudeCodeOptions.new
     
-    # Merge MCP servers if provided as a separate parameter
-    unless mcp_servers.empty?
-      options = ClaudeCodeOptions.new(
-        allowed_tools: options.allowed_tools,
-        max_thinking_tokens: options.max_thinking_tokens,
-        system_prompt: options.system_prompt,
-        append_system_prompt: options.append_system_prompt,
-        mcp_tools: options.mcp_tools,
-        mcp_servers: options.mcp_servers.merge(mcp_servers),
-        permission_mode: options.permission_mode,
-        continue_conversation: options.continue_conversation,
-        resume: options.resume,
-        max_turns: options.max_turns,
-        disallowed_tools: options.disallowed_tools,
-        model: options.model,
-        permission_prompt_tool_name: options.permission_prompt_tool_name,
-        cwd: options.cwd,
-        input_format: 'stream-json',
-        output_format: 'stream-json'
-      )
+    # Set input_format to stream-json
+    stream_options = ClaudeCodeOptions.new(
+      allowed_tools: options.allowed_tools,
+      max_thinking_tokens: options.max_thinking_tokens,
+      system_prompt: options.system_prompt,
+      append_system_prompt: options.append_system_prompt,
+      mcp_tools: options.mcp_tools,
+      mcp_servers: options.mcp_servers,
+      permission_mode: options.permission_mode,
+      continue_conversation: options.continue_conversation,
+      resume_conversation_id: options.resume_conversation_id,
+      max_turns: options.max_turns,
+      disallowed_tools: options.disallowed_tools,
+      model: options.model,
+      permission_prompt_tool_name: options.permission_prompt_tool_name,
+      cwd: options.cwd,
+      input_format: 'stream-json'
+    )
+    
+    # Use the client to process the query
+    client = Client.new
+    enumerator = client.process_query(messages: messages, options: stream_options, cli_path: cli_path, mcp_servers: mcp_servers)
+    
+    if block_given?
+      enumerator.each { |message| yield message }
     else
-      # Ensure we're using streaming JSON input and output
-      options = ClaudeCodeOptions.new(
-        allowed_tools: options.allowed_tools,
-        max_thinking_tokens: options.max_thinking_tokens,
-        system_prompt: options.system_prompt,
-        append_system_prompt: options.append_system_prompt,
-        mcp_tools: options.mcp_tools,
-        mcp_servers: options.mcp_servers,
-        permission_mode: options.permission_mode,
-        continue_conversation: options.continue_conversation,
-        resume: options.resume,
-        max_turns: options.max_turns,
-        disallowed_tools: options.disallowed_tools,
-        model: options.model,
-        permission_prompt_tool_name: options.permission_prompt_tool_name,
-        cwd: options.cwd,
-        input_format: 'stream-json',
-        output_format: 'stream-json'
-      )
-    end
-    
-    ENV['CLAUDE_CODE_ENTRYPOINT'] = 'sdk-ruby'
-    
-    # Create transport directly for streaming JSON input
-    transport = SubprocessCLITransport.new(prompt: "", options: options, cli_path: cli_path)
-    
-    begin
-      transport.connect
-      
-      # Send messages via stdin
-      transport.send_messages(messages)
-      
-      # Return enumerator for streaming responses
-      Enumerator.new do |yielder|
-        transport.receive_messages do |data|
-          # Parse messages directly since we don't need the full client here
-          message = parse_cli_message(data)
-          yielder << message if message
-        end
-      end
-    ensure
-      transport.disconnect
+      enumerator
     end
   end
 
@@ -277,24 +235,31 @@ module ClaudeCodeSDK
       if block_given?
         yield message, index
       else
-        # Default streaming output
-        case message
-        when SystemMessage
-          puts "🔧 System: #{message.subtype}" if message.subtype != "init"
-        when AssistantMessage
-          message.content.each do |block|
-            case block
-            when TextBlock
-              puts "💬 #{block.text}"
-            when ToolUseBlock
-              puts "🔧 #{block.name}: #{block.input}"
-            end
-          end
-        when ResultMessage
-          puts "✅ Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
-        end
-        $stdout.flush
+        # Use auto_format_message for consistent formatting
+        auto_format_message(message)
       end
     end
+  end
+  
+  # Auto-format message for pretty printing
+  def self.auto_format_message(message)
+    case message
+    when SystemMessage
+      puts "🔧 System: #{message.subtype}" if message.subtype != "init"
+    when AssistantMessage
+      message.content.each do |block|
+        case block
+        when TextBlock
+          puts "💬 #{block.text}"
+        when ToolUseBlock
+          puts "🔧 #{block.name}"
+        when ToolResultBlock
+          puts "📤 #{block.content}"
+        end
+      end
+    when ResultMessage
+      puts "✅ Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
+    end
+    $stdout.flush
   end
 end
