@@ -240,13 +240,8 @@ module ClaudeCode
         cmd.concat(['--mcp-config', JSON.generate(mcp_config)])
       end
 
-      # For streaming JSON input, we use --print mode and send JSON via stdin
-      # For regular input, we use --print with the prompt
-      if @options.input_format == 'stream-json'
-        cmd << '--print'
-      else
-        cmd.concat(['--print', @prompt])
-      end
+      # Always use --print flag (prompt will be sent via stdin)
+      cmd << '--print'
 
       cmd
     end
@@ -274,7 +269,12 @@ module ClaudeCode
           # Keep stdin open for streaming JSON input
           puts 'Debug: Keeping stdin open for streaming JSON input' if ENV['DEBUG_CLAUDE_SDK']
         else
-          # Close stdin for regular prompt mode
+          # Write prompt to stdin and close
+          if @prompt && !@prompt.empty?
+            puts "Debug: Writing prompt to stdin (#{@prompt.length} chars)" if ENV['DEBUG_CLAUDE_SDK']
+            @stdin.write(@prompt)
+            @stdin.flush
+          end
           @stdin.close
         end
 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.18] - 2025-01-16
+
+### Fixed
+- Fixed command line length limit issue by switching from command line arguments to stdin for prompt input
+- This resolves errors when using long prompts that exceed system ARG_MAX limits
+
 ### Added
 - Real-time streaming support with lazy enumerators
 - Ergonomic MCP (Model Context Protocol) integration

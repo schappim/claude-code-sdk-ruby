@@ -80,7 +80,8 @@ RSpec.describe ClaudeCode::SubprocessCLITransport do
       expect(cmd[0]).to eq(cli_path)
       expect(cmd).to include('--output-format', 'stream-json')
       expect(cmd).to include('--verbose')
-      expect(cmd).to include('--print', prompt)
+      expect(cmd).to include('--print')
+      expect(cmd).not_to include(prompt)
     end
 
     it 'includes options in command' do
@@ -171,6 +172,8 @@ RSpec.describe ClaudeCode::SubprocessCLITransport do
       process = instance_double(Process::Waiter, pid: 12345, alive?: true)
 
       allow(Open3).to receive(:popen3).and_return([stdin_w, stdout_r, stderr_r, process])
+      allow(stdin_w).to receive(:write).with(prompt)
+      allow(stdin_w).to receive(:flush)
       allow(stdin_w).to receive(:close)
       allow(Process).to receive(:kill)
       allow(process).to receive(:join)

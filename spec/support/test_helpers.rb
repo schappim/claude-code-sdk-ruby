@@ -89,7 +89,7 @@ module SpecTestHelpers
   end
 
   # Mock Open3.popen3 for subprocess testing
-  def mock_popen3(stdout_lines: [], stderr_lines: [], exit_status: 0)
+  def mock_popen3(stdout_lines: [], stderr_lines: [], exit_status: 0, expect_prompt: true)
     stdout_r, stdout_w = IO.pipe
     stderr_r, stderr_w = IO.pipe
     stdin_r, stdin_w = IO.pipe
@@ -100,6 +100,13 @@ module SpecTestHelpers
     stdout_w.close
     stderr_w.close
     stdin_r.close
+
+    # Mock stdin to accept prompt writes
+    if expect_prompt
+      allow(stdin_w).to receive(:write)
+      allow(stdin_w).to receive(:flush)
+    end
+    allow(stdin_w).to receive(:close)
 
     # Mock process
     process = instance_double(Process::Waiter)
