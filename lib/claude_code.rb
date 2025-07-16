@@ -57,8 +57,49 @@ module ClaudeCode
   end
 
   # Convenience method for adding MCP servers
+  # Accepts:
+  # - String URLs (auto-creates McpHttpServerConfig)
+  # - String commands (auto-creates McpStdioServerConfig)
+  # - Hash configurations
+  # - Pre-built config objects
   def self.add_mcp_server(name, config)
-    { name => config }
+    server_config = case config
+    when String
+      if config.start_with?('http://', 'https://')
+        # HTTP/HTTPS URL
+        McpHttpServerConfig.new(url: config)
+      else
+        # Stdio command
+        parts = config.split(' ')
+        McpStdioServerConfig.new(
+          command: parts[0],
+          args: parts[1..-1] || []
+        )
+      end
+    when Hash
+      # Convert hash to appropriate config object
+      if config[:url] || config['url']
+        # HTTP/HTTPS server
+        url = config[:url] || config['url']
+        headers = config[:headers] || config['headers'] || {}
+        McpHttpServerConfig.new(url: url, headers: headers)
+      elsif config[:command] || config['command']
+        # Stdio server
+        command = config[:command] || config['command']
+        args = config[:args] || config['args'] || []
+        env = config[:env] || config['env'] || {}
+        McpStdioServerConfig.new(command: command, args: args, env: env)
+      else
+        raise ArgumentError, "Invalid MCP server configuration: missing required fields"
+      end
+    when McpHttpServerConfig, McpSSEServerConfig, McpStdioServerConfig
+      # Already a config object
+      config
+    else
+      raise ArgumentError, "Invalid MCP server configuration type: #{config.class}"
+    end
+    
+    { name => server_config }
   end
 
   # Ultra-convenient method for quick MCP queries

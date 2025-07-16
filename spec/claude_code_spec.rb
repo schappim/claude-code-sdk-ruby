@@ -194,14 +194,20 @@ RSpec.describe ClaudeCode do
     it 'returns correct MCP configuration hash' do
       result = ClaudeCode.add_mcp_server('test', 'http://example.com')
       
-      expect(result).to eq({ 'test' => 'http://example.com' })
+      expect(result).to be_a(Hash)
+      expect(result.keys).to eq(['test'])
+      expect(result['test']).to be_a(ClaudeCode::McpHttpServerConfig)
+      expect(result['test'].url).to eq('http://example.com')
     end
 
     it 'handles complex configurations' do
-      config = { url: 'http://example.com', tools: ['tool1'] }
+      config = { url: 'http://example.com', headers: { 'X-Tool' => 'tool1' } }
       result = ClaudeCode.add_mcp_server('test', config)
       
-      expect(result).to eq({ 'test' => config })
+      expect(result).to be_a(Hash)
+      expect(result['test']).to be_a(ClaudeCode::McpHttpServerConfig)
+      expect(result['test'].url).to eq('http://example.com')
+      expect(result['test'].headers).to eq({ 'X-Tool' => 'tool1' })
     end
   end
 
@@ -210,16 +216,18 @@ RSpec.describe ClaudeCode do
       expect(ClaudeCode).to receive(:query).with(
         prompt: 'test prompt',
         options: instance_of(ClaudeCode::ClaudeCodeOptions),
-        mcp_servers: { 'test_server' => 'http://example.com' },
+        mcp_servers: hash_including('test_server'),
         cli_path: nil
-      )
+      ).and_return([])
       
-      ClaudeCode.quick_mcp_query(
+      result = ClaudeCode.quick_mcp_query(
         'test prompt',
         server_name: 'test_server',
         server_url: 'http://example.com',
         tools: 'tool1'
       )
+      
+      expect(result).to be_an(Array)
     end
 
     it 'handles array of tools' do
