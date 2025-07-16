@@ -1,27 +1,27 @@
 # IRB helpers for Ruby Claude Code SDK with MCP
 # Load this file: require_relative 'examples/irb_helpers'
 
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 # Quick MCP test with Creator Ninja
 def ninja_test(prompt)
-  ClaudeCodeSDK.quick_mcp_query(
+  ClaudeCode.quick_mcp_query(
     prompt,
     server_name: 'ninja',
     server_url: 'https://mcp-creator-ninja-v1-4-0.mcp.soy/',
     tools: 'about'
   ).each do |msg|
     case msg
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       msg.content.each do |block|
         case block
-        when ClaudeCodeSDK::TextBlock
+        when ClaudeCode::TextBlock
           puts "💬 #{block.text}"
-        when ClaudeCodeSDK::ToolUseBlock
+        when ClaudeCode::ToolUseBlock
           puts "🔧 #{block.name}: #{block.input}"
         end
       end
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "💰 $#{format('%.6f', msg.total_cost_usd)}" if msg.total_cost_usd
     end
   end
@@ -29,7 +29,7 @@ end
 
 # Generic MCP tester
 def test_mcp(prompt, server_name, server_url, tools)
-  ClaudeCodeSDK.quick_mcp_query(
+  ClaudeCode.quick_mcp_query(
     prompt,
     server_name: server_name,
     server_url: server_url,
@@ -39,19 +39,19 @@ end
 
 # Quick Claude query without MCP
 def quick_claude(prompt, model: nil)
-  options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+  options = ClaudeCode::ClaudeCodeOptions.new(
     model: model,
     max_turns: 1
   )
   
-  ClaudeCodeSDK.query(
+  ClaudeCode.query(
     prompt: prompt,
     options: options,
     cli_path: "/Users/admin/.claude/local/claude"
   ).each do |msg|
-    if msg.is_a?(ClaudeCodeSDK::AssistantMessage)
+    if msg.is_a?(ClaudeCode::AssistantMessage)
       msg.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts block.text
         end
       end
@@ -62,20 +62,20 @@ end
 # Streaming version with timestamps
 def stream_claude(prompt, model: nil)
   start_time = Time.now
-  ClaudeCodeSDK.stream_query(
+  ClaudeCode.stream_query(
     prompt: prompt,
-    options: ClaudeCodeSDK::ClaudeCodeOptions.new(model: model, max_turns: 1),
+    options: ClaudeCode::ClaudeCodeOptions.new(model: model, max_turns: 1),
     cli_path: "/Users/admin/.claude/local/claude"
   ) do |msg, index|
     timestamp = Time.now - start_time
     case msg
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       msg.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "[#{format('%.2f', timestamp)}s] #{block.text}"
         end
       end
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "[#{format('%.2f', timestamp)}s] 💰 $#{format('%.6f', msg.total_cost_usd || 0)}"
     end
   end
@@ -83,9 +83,9 @@ end
 
 # Simple auto-streaming
 def auto_stream(prompt, model: nil)
-  ClaudeCodeSDK.stream_query(
+  ClaudeCode.stream_query(
     prompt: prompt,
-    options: ClaudeCodeSDK::ClaudeCodeOptions.new(model: model, max_turns: 1),
+    options: ClaudeCode::ClaudeCodeOptions.new(model: model, max_turns: 1),
     cli_path: "/Users/admin/.claude/local/claude"
   )
 end
@@ -94,15 +94,15 @@ end
 def continue_chat(prompt = nil)
   last_session_id = nil
   
-  ClaudeCodeSDK.continue_conversation(prompt) do |msg|
+  ClaudeCode.continue_conversation(prompt) do |msg|
     case msg
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       msg.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "💬 #{block.text}"
         end
       end
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       last_session_id = msg.session_id
       puts "📋 Session: #{last_session_id}"
       puts "💰 $#{format('%.6f', msg.total_cost_usd || 0)}"
@@ -114,15 +114,15 @@ end
 
 # Resume a specific conversation
 def resume_chat(session_id, prompt = nil)
-  ClaudeCodeSDK.resume_conversation(session_id, prompt) do |msg|
+  ClaudeCode.resume_conversation(session_id, prompt) do |msg|
     case msg
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       msg.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "💬 #{block.text}"
         end
       end
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "📋 Session: #{msg.session_id}"
       puts "💰 $#{format('%.6f', msg.total_cost_usd || 0)}"
     end

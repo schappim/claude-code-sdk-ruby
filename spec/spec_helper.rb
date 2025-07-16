@@ -11,7 +11,7 @@ if ENV['COVERAGE'] == 'true'
 end
 
 require 'bundler/setup'
-require 'claude_code_sdk'
+require 'claude_code'
 
 # Include support files
 Dir[File.join(__dir__, 'support', '**', '*.rb')].each { |f| require f }
@@ -79,15 +79,15 @@ end
 # Test helpers for message creation
 module TestHelpers
   def text_block(text)
-    ClaudeCodeSDK::TextBlock.new(text)
+    ClaudeCode::TextBlock.new(text)
   end
 
   def tool_use_block(id:, name:, input:)
-    ClaudeCodeSDK::ToolUseBlock.new(id: id, name: name, input: input)
+    ClaudeCode::ToolUseBlock.new(id: id, name: name, input: input)
   end
 
   def tool_result_block(tool_use_id:, content:, is_error: false)
-    ClaudeCodeSDK::ToolResultBlock.new(
+    ClaudeCode::ToolResultBlock.new(
       tool_use_id: tool_use_id,
       content: content,
       is_error: is_error
@@ -95,11 +95,11 @@ module TestHelpers
   end
 
   def assistant_message(content:)
-    ClaudeCodeSDK::AssistantMessage.new(content)
+    ClaudeCode::AssistantMessage.new(content)
   end
 
   def user_message(content:)
-    ClaudeCodeSDK::UserMessage.new(content)
+    ClaudeCode::UserMessage.new(content)
   end
 
   def result_message(
@@ -113,7 +113,7 @@ module TestHelpers
     usage: nil,
     result: nil
   )
-    ClaudeCodeSDK::ResultMessage.new(
+    ClaudeCode::ResultMessage.new(
       subtype: subtype,
       duration_ms: duration_ms,
       duration_api_ms: duration_api_ms,
@@ -127,7 +127,7 @@ module TestHelpers
   end
 
   def claude_options(**kwargs)
-    ClaudeCodeSDK::ClaudeCodeOptions.new(**kwargs)
+    ClaudeCode::ClaudeCodeOptions.new(**kwargs)
   end
 end
 

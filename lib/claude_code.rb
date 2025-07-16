@@ -4,12 +4,12 @@ require 'json'
 require 'open3'
 require 'pathname'
 
-require_relative 'claude_code_sdk/version'
-require_relative 'claude_code_sdk/types'
-require_relative 'claude_code_sdk/errors'
-require_relative 'claude_code_sdk/client'
+require_relative 'claude_code/version'
+require_relative 'claude_code/types'
+require_relative 'claude_code/errors'
+require_relative 'claude_code/client'
 
-module ClaudeCodeSDK
+module ClaudeCode
   # Main query method - supports both positional and keyword arguments
   def self.query(prompt_or_args = nil, prompt: nil, options: nil, cli_path: nil, mcp_servers: {}, &block)
     # Handle positional argument for backward compatibility

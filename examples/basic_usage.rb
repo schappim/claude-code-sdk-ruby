@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # Basic usage examples for Ruby Claude Code SDK
 
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 def test_basic_query
   puts "=== Testing Basic Query ==="
@@ -10,21 +10,21 @@ def test_basic_query
   claude_path = "/Users/admin/.claude/local/claude"
   
   begin
-    ClaudeCodeSDK.query(
+    ClaudeCode.query(
       prompt: "What is 2 + 2? Answer in one sentence.",
       cli_path: claude_path
     ).each do |message|
       puts "Message type: #{message.class}"
       
-      if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+      if message.is_a?(ClaudeCode::AssistantMessage)
         message.content.each do |block|
-          if block.is_a?(ClaudeCodeSDK::TextBlock)
+          if block.is_a?(ClaudeCode::TextBlock)
             puts "Claude: #{block.text}"
-          elsif block.is_a?(ClaudeCodeSDK::ToolUseBlock)
+          elsif block.is_a?(ClaudeCode::ToolUseBlock)
             puts "Tool Use: #{block.name} with input #{block.input}"
           end
         end
-      elsif message.is_a?(ClaudeCodeSDK::ResultMessage)
+      elsif message.is_a?(ClaudeCode::ResultMessage)
         puts "Result: #{message.result}"
         puts "Cost: $#{message.total_cost_usd}" if message.total_cost_usd
       else
@@ -42,20 +42,20 @@ def test_with_options
   
   claude_path = "/Users/admin/.claude/local/claude"
   
-  options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+  options = ClaudeCode::ClaudeCodeOptions.new(
     max_turns: 1,
     system_prompt: "You are a helpful assistant. Be very concise."
   )
   
   begin
-    ClaudeCodeSDK.query(
+    ClaudeCode.query(
       prompt: "Explain Ruby in one sentence.",
       options: options,
       cli_path: claude_path
     ).each do |message|
-      if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+      if message.is_a?(ClaudeCode::AssistantMessage)
         message.content.each do |block|
-          if block.is_a?(ClaudeCodeSDK::TextBlock)
+          if block.is_a?(ClaudeCode::TextBlock)
             puts "Claude: #{block.text}"
           end
         end

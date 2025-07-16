@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ClaudeCodeSDK
+module ClaudeCode
   # Permission modes
   PERMISSION_MODES = %w[default acceptEdits bypassPermissions].freeze
 

@@ -2,9 +2,9 @@
 
 require 'spec_helper'
 
-RSpec.describe ClaudeCodeSDK::Client do
+RSpec.describe ClaudeCode::Client do
   let(:client) { described_class.new }
-  let(:options) { ClaudeCodeSDK::ClaudeCodeOptions.new }
+  let(:options) { ClaudeCode::ClaudeCodeOptions.new }
 
   describe '#process_query' do
     context 'with successful CLI execution' do
@@ -29,8 +29,8 @@ RSpec.describe ClaudeCodeSDK::Client do
         end
 
         expect(messages.length).to eq(2)
-        expect(messages[0]).to be_a(ClaudeCodeSDK::AssistantMessage)
-        expect(messages[1]).to be_a(ClaudeCodeSDK::ResultMessage)
+        expect(messages[0]).to be_a(ClaudeCode::AssistantMessage)
+        expect(messages[1]).to be_a(ClaudeCode::ResultMessage)
       end
 
       it 'handles streaming JSON input' do
@@ -40,7 +40,7 @@ RSpec.describe ClaudeCodeSDK::Client do
           { 'type' => 'user', 'message' => { 'role' => 'user', 'content' => [{ 'type' => 'text', 'text' => 'Hello' }] } }
         ]
         
-        options_with_stream = ClaudeCodeSDK::ClaudeCodeOptions.new(input_format: 'stream-json')
+        options_with_stream = ClaudeCode::ClaudeCodeOptions.new(input_format: 'stream-json')
         
         # For streaming JSON, we need special handling of stdin
         stdin_r, stdin_w = IO.pipe
@@ -65,7 +65,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         allow(Open3).to receive(:popen3).and_return([stdin_w, stdout_r, stderr_r, process])
         
         # Don't try to read the messages since stdin is mocked
-        allow_any_instance_of(ClaudeCodeSDK::SubprocessCLITransport).to receive(:send_messages) do |transport, msgs|
+        allow_any_instance_of(ClaudeCode::SubprocessCLITransport).to receive(:send_messages) do |transport, msgs|
           # Close stdin to signal end of input
           stdin_w.close
         end
@@ -89,9 +89,9 @@ RSpec.describe ClaudeCodeSDK::Client do
         messages = client.process_query(prompt: 'Hello', options: options).to_a
         
         expect(messages.length).to eq(3)
-        expect(messages[0]).to be_a(ClaudeCodeSDK::SystemMessage)
-        expect(messages[1]).to be_a(ClaudeCodeSDK::AssistantMessage)
-        expect(messages[2]).to be_a(ClaudeCodeSDK::ResultMessage)
+        expect(messages[0]).to be_a(ClaudeCode::SystemMessage)
+        expect(messages[1]).to be_a(ClaudeCode::AssistantMessage)
+        expect(messages[2]).to be_a(ClaudeCode::ResultMessage)
       end
 
       it 'handles mixed content types' do
@@ -116,9 +116,9 @@ RSpec.describe ClaudeCodeSDK::Client do
         expect(messages.length).to eq(1)
         message = messages[0]
         expect(message.content.length).to eq(3)
-        expect(message.content[0]).to be_a(ClaudeCodeSDK::TextBlock)
-        expect(message.content[1]).to be_a(ClaudeCodeSDK::ToolUseBlock)
-        expect(message.content[2]).to be_a(ClaudeCodeSDK::ToolResultBlock)
+        expect(message.content[0]).to be_a(ClaudeCode::TextBlock)
+        expect(message.content[1]).to be_a(ClaudeCode::ToolUseBlock)
+        expect(message.content[2]).to be_a(ClaudeCode::ToolResultBlock)
       end
     end
 
@@ -126,12 +126,12 @@ RSpec.describe ClaudeCodeSDK::Client do
       it 'raises CLIConnectionError' do
         stub_cli_found('/usr/local/bin/claude')
         
-        allow_any_instance_of(ClaudeCodeSDK::SubprocessCLITransport)
-          .to receive(:connect).and_raise(ClaudeCodeSDK::CLIConnectionError.new('Connection failed'))
+        allow_any_instance_of(ClaudeCode::SubprocessCLITransport)
+          .to receive(:connect).and_raise(ClaudeCode::CLIConnectionError.new('Connection failed'))
 
         expect do
           client.process_query(prompt: 'Hello', options: options).to_a
-        end.to raise_error(ClaudeCodeSDK::CLIConnectionError, /Connection failed/)
+        end.to raise_error(ClaudeCode::CLIConnectionError, /Connection failed/)
       end
     end
 
@@ -141,7 +141,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         
         expect do
           client.process_query(prompt: 'Hello', options: options).to_a
-        end.to raise_error(ClaudeCodeSDK::CLINotFoundError)
+        end.to raise_error(ClaudeCode::CLINotFoundError)
       end
     end
 
@@ -157,7 +157,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         
         expect do
           client.process_query(prompt: 'Hello', options: options).to_a
-        end.to raise_error(ClaudeCodeSDK::ProcessError) do |error|
+        end.to raise_error(ClaudeCode::ProcessError) do |error|
           expect(error.exit_code).to eq(1)
           expect(error.stderr).to include('Error: Something went wrong')
         end
@@ -175,7 +175,7 @@ RSpec.describe ClaudeCodeSDK::Client do
 
         expect do
           client.process_query(prompt: 'Hello', options: options).to_a
-        end.to raise_error(ClaudeCodeSDK::CLIJSONDecodeError)
+        end.to raise_error(ClaudeCode::CLIJSONDecodeError)
       end
 
       it 'handles partial JSON lines gracefully' do
@@ -188,7 +188,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         
         expect do
           client.process_query(prompt: 'Hello', options: options).to_a
-        end.to raise_error(ClaudeCodeSDK::CLIJSONDecodeError)
+        end.to raise_error(ClaudeCode::CLIJSONDecodeError)
       end
 
       it 'skips empty lines' do
@@ -249,7 +249,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         data = test_assistant_message('Hello, world!')
         message = client.send(:parse_message, data)
 
-        expect(message).to be_a(ClaudeCodeSDK::AssistantMessage)
+        expect(message).to be_a(ClaudeCode::AssistantMessage)
         expect(message.content.length).to eq(1)
         expect(message.content[0].text).to eq('Hello, world!')
       end
@@ -258,11 +258,11 @@ RSpec.describe ClaudeCodeSDK::Client do
         data = test_tool_use_message('Read', { 'file_path' => '/test.txt' })
         message = client.send(:parse_message, data)
 
-        expect(message).to be_a(ClaudeCodeSDK::AssistantMessage)
+        expect(message).to be_a(ClaudeCode::AssistantMessage)
         expect(message.content.length).to eq(1)
         
         tool_use = message.content[0]
-        expect(tool_use).to be_a(ClaudeCodeSDK::ToolUseBlock)
+        expect(tool_use).to be_a(ClaudeCode::ToolUseBlock)
         expect(tool_use.name).to eq('Read')
         expect(tool_use.input['file_path']).to eq('/test.txt')
       end
@@ -273,7 +273,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         data = test_system_message(subtype: 'init')
         message = client.send(:parse_message, data)
 
-        expect(message).to be_a(ClaudeCodeSDK::SystemMessage)
+        expect(message).to be_a(ClaudeCode::SystemMessage)
         expect(message.subtype).to eq('init')
       end
     end
@@ -283,7 +283,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         data = test_result_message(cost: 0.005, duration: 2000)
         message = client.send(:parse_message, data)
 
-        expect(message).to be_a(ClaudeCodeSDK::ResultMessage)
+        expect(message).to be_a(ClaudeCode::ResultMessage)
         expect(message.total_cost_usd).to eq(0.005)
         expect(message.duration_ms).to eq(2000)
       end
@@ -310,7 +310,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         
         message = client.send(:parse_message, data)
         
-        expect(message).to be_a(ClaudeCodeSDK::AssistantMessage)
+        expect(message).to be_a(ClaudeCode::AssistantMessage)
         expect(message.content).to eq([])
       end
 
@@ -327,7 +327,7 @@ RSpec.describe ClaudeCodeSDK::Client do
         
         message = client.send(:parse_message, data)
         
-        expect(message).to be_a(ClaudeCodeSDK::AssistantMessage)
+        expect(message).to be_a(ClaudeCode::AssistantMessage)
         expect(message.content).to eq([])
       end
     end
@@ -351,9 +351,9 @@ RSpec.describe ClaudeCodeSDK::Client do
         
         message = client.send(:parse_message, data)
         
-        expect(message).to be_a(ClaudeCodeSDK::AssistantMessage)
+        expect(message).to be_a(ClaudeCode::AssistantMessage)
         tool_result = message.content[0]
-        expect(tool_result).to be_a(ClaudeCodeSDK::ToolResultBlock)
+        expect(tool_result).to be_a(ClaudeCode::ToolResultBlock)
         expect(tool_result.tool_use_id).to eq('tool-123')
         expect(tool_result.content).to eq('Result content')
         expect(tool_result.is_error).to be false

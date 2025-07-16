@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    claude_code_sdk (0.0.14)
+    claude_code (0.0.14)
       json (~> 2.0)
 
 GEM
@@ -87,7 +87,7 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (~> 2.0)
-  claude_code_sdk!
+  claude_code!
   rake (~> 13.0)
   rspec (~> 3.0)
   rubocop (~> 1.0)

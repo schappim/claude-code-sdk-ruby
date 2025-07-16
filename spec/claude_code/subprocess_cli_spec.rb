@@ -2,9 +2,9 @@
 
 require 'spec_helper'
 
-RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
+RSpec.describe ClaudeCode::SubprocessCLITransport do
   let(:prompt) { 'test prompt' }
-  let(:options) { ClaudeCodeSDK::ClaudeCodeOptions.new }
+  let(:options) { ClaudeCode::ClaudeCodeOptions.new }
   let(:cli_path) { '/usr/local/bin/claude' }
 
   describe '#find_cli' do
@@ -16,7 +16,7 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
         allow_any_instance_of(Pathname).to receive(:exist?).and_return(false)
 
         expect { transport.send(:find_cli) }
-          .to raise_error(ClaudeCodeSDK::CLINotFoundError) do |error|
+          .to raise_error(ClaudeCode::CLINotFoundError) do |error|
             expect(error.message).to include('Claude Code requires Node.js')
             expect(error.message).to include('npm install -g @anthropic-ai/claude-code')
           end
@@ -30,7 +30,7 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
         allow_any_instance_of(Pathname).to receive(:exist?).and_return(false)
 
         expect { transport.send(:find_cli) }
-          .to raise_error(ClaudeCodeSDK::CLINotFoundError) do |error|
+          .to raise_error(ClaudeCode::CLINotFoundError) do |error|
             expect(error.message).to include('Node.js, which is not installed')
             expect(error.message).to include('https://nodejs.org/')
           end
@@ -84,7 +84,7 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
     end
 
     it 'includes options in command' do
-      options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+      options = ClaudeCode::ClaudeCodeOptions.new(
         system_prompt: 'Be helpful',
         allowed_tools: ['Read', 'Write'],
         disallowed_tools: ['Bash'],
@@ -110,7 +110,7 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
     end
 
     it 'includes session continuation options' do
-      options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+      options = ClaudeCode::ClaudeCodeOptions.new(
         continue_conversation: true,
         resume: 'session-123'
       )
@@ -129,12 +129,12 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
 
     it 'includes MCP server configuration' do
       mcp_servers = {
-        'test_server' => ClaudeCodeSDK::McpHttpServerConfig.new(
+        'test_server' => ClaudeCode::McpHttpServerConfig.new(
           url: 'http://test.com'
         )
       }
       
-      options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+      options = ClaudeCode::ClaudeCodeOptions.new(
         mcp_servers: mcp_servers
       )
 
@@ -188,11 +188,11 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
       allow(Open3).to receive(:popen3).and_raise(Errno::ENOENT.new('No such file'))
 
       expect { transport.connect }
-        .to raise_error(ClaudeCodeSDK::CLINotFoundError, /Claude Code not found/)
+        .to raise_error(ClaudeCode::CLINotFoundError, /Claude Code not found/)
     end
 
     it 'handles working directory errors' do
-      options = ClaudeCodeSDK::ClaudeCodeOptions.new(cwd: '/nonexistent/path')
+      options = ClaudeCode::ClaudeCodeOptions.new(cwd: '/nonexistent/path')
       transport = described_class.new(
         prompt: prompt,
         options: options,
@@ -202,7 +202,7 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
       allow(Open3).to receive(:popen3).and_raise(Errno::ENOENT.new('No such file'))
 
       expect { transport.connect }
-        .to raise_error(ClaudeCodeSDK::CLIConnectionError, /Working directory does not exist/)
+        .to raise_error(ClaudeCode::CLIConnectionError, /Working directory does not exist/)
     end
   end
 
@@ -218,7 +218,7 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
     it 'requires connection' do
       expect do
         transport.receive_messages { |_| nil }
-      end.to raise_error(ClaudeCodeSDK::CLIConnectionError, 'Not connected')
+      end.to raise_error(ClaudeCode::CLIConnectionError, 'Not connected')
     end
 
     it 'parses JSON messages from stdout' do
@@ -258,7 +258,7 @@ RSpec.describe ClaudeCodeSDK::SubprocessCLITransport do
 
       expect do
         transport.receive_messages { |_| nil }
-      end.to raise_error(ClaudeCodeSDK::ProcessError) do |error|
+      end.to raise_error(ClaudeCode::ProcessError) do |error|
         expect(error.exit_code).to eq(1)
         expect(error.stderr).to include('Error message')
       end

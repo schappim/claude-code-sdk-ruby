@@ -79,13 +79,13 @@ module SpecTestHelpers
 
   # Stub the CLI path finding for tests
   def stub_cli_found(path = '/usr/local/bin/claude')
-    allow_any_instance_of(ClaudeCodeSDK::SubprocessCLITransport)
+    allow_any_instance_of(ClaudeCode::SubprocessCLITransport)
       .to receive(:find_cli).and_return(path)
   end
 
   def stub_cli_not_found
-    allow_any_instance_of(ClaudeCodeSDK::SubprocessCLITransport)
-      .to receive(:find_cli).and_raise(ClaudeCodeSDK::CLINotFoundError.new('Test: CLI not found'))
+    allow_any_instance_of(ClaudeCode::SubprocessCLITransport)
+      .to receive(:find_cli).and_raise(ClaudeCode::CLINotFoundError.new('Test: CLI not found'))
   end
 
   # Mock Open3.popen3 for subprocess testing

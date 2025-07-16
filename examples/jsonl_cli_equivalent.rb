@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 # Example: JSONL CLI equivalent showing how the Ruby SDK mirrors CLI functionality
 
@@ -28,7 +28,7 @@ puts "\n📝 Sending JSONL message:"
 puts JSON.pretty_generate(user_message)
 
 # Configure options to match CLI behavior
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   input_format: 'stream-json',
   output_format: 'stream-json'
 )
@@ -36,24 +36,24 @@ options = ClaudeCodeSDK::ClaudeCodeOptions.new(
 puts "\n🚀 Processing with streaming JSON I/O..."
 
 begin
-  ClaudeCodeSDK.stream_json_query([user_message], options: options) do |message|
+  ClaudeCode.stream_json_query([user_message], options: options) do |message|
     case message
-    when ClaudeCodeSDK::SystemMessage
+    when ClaudeCode::SystemMessage
       puts "🔧 System (#{message.subtype}): #{message.data.keys.join(', ')}"
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       puts "\n💬 Assistant Response:"
       message.content.each do |block|
         case block
-        when ClaudeCodeSDK::TextBlock
+        when ClaudeCode::TextBlock
           puts block.text
-        when ClaudeCodeSDK::ToolUseBlock
+        when ClaudeCode::ToolUseBlock
           puts "🔧 Tool Use: #{block.name}"
           puts "📥 Input: #{block.input}"
-        when ClaudeCodeSDK::ToolResultBlock
+        when ClaudeCode::ToolResultBlock
           puts "📤 Tool Result: #{block.content}"
         end
       end
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "\n📊 Result:"
       puts "  Duration: #{message.duration_ms}ms"
       puts "  API Time: #{message.duration_api_ms}ms" if message.duration_api_ms
@@ -63,11 +63,11 @@ begin
       puts "  Status: #{message.subtype}"
     end
   end
-rescue ClaudeCodeSDK::CLINotFoundError => e
+rescue ClaudeCode::CLINotFoundError => e
   puts "❌ Claude CLI not found: #{e.message}"
   puts "\nPlease install Claude Code:"
   puts "  npm install -g @anthropic-ai/claude-code"
-rescue ClaudeCodeSDK::ProcessError => e
+rescue ClaudeCode::ProcessError => e
   puts "❌ Process error: #{e.message}"
   puts "Exit code: #{e.exit_code}" if e.exit_code
   puts "Stderr: #{e.stderr}" if e.stderr
@@ -81,11 +81,11 @@ puts "JSONL Helper Methods Demonstration"
 puts "="*50
 
 puts "\n1. Using JSONLHelpers.create_user_message:"
-helper_message = ClaudeCodeSDK::JSONLHelpers.create_user_message("What is Ruby?")
+helper_message = ClaudeCode::JSONLHelpers.create_user_message("What is Ruby?")
 puts JSON.pretty_generate(helper_message)
 
 puts "\n2. Creating multiple messages:"
-messages = ClaudeCodeSDK::JSONLHelpers.create_conversation(
+messages = ClaudeCode::JSONLHelpers.create_conversation(
   "Hello!",
   "How are you?",
   "Tell me about Ruby"
@@ -97,12 +97,12 @@ messages.each_with_index do |msg, i|
 end
 
 puts "\n3. Format as JSONL string:"
-jsonl_string = ClaudeCodeSDK::JSONLHelpers.format_messages_as_jsonl(messages)
+jsonl_string = ClaudeCode::JSONLHelpers.format_messages_as_jsonl(messages)
 puts jsonl_string
 
 puts "\n✅ CLI equivalent example completed!"
 puts "\nTo use this functionality:"
 puts "1. Set ANTHROPIC_API_KEY environment variable"
-puts "2. Use ClaudeCodeSDK.stream_json_query(messages)"
+puts "2. Use ClaudeCode.stream_json_query(messages)"
 puts "3. Process streaming responses in real-time"
 puts "4. Handle system, assistant, and result messages appropriately"

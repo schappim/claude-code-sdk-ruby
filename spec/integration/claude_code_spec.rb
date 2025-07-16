@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe ClaudeCodeSDK, :integration do
+RSpec.describe ClaudeCode, :integration do
   describe 'end-to-end functionality with mocked CLI responses' do
     before do
       stub_cli_found('/usr/local/bin/claude')
@@ -21,7 +21,7 @@ RSpec.describe ClaudeCodeSDK, :integration do
         )
 
         messages = []
-        ClaudeCodeSDK.query('What is 2 + 2?') do |msg|
+        ClaudeCode.query('What is 2 + 2?') do |msg|
           messages << msg
         end
 
@@ -29,12 +29,12 @@ RSpec.describe ClaudeCodeSDK, :integration do
         expect(messages.length).to eq(2)
 
         # Check assistant message
-        expect(messages[0]).to be_a(ClaudeCodeSDK::AssistantMessage)
+        expect(messages[0]).to be_a(ClaudeCode::AssistantMessage)
         expect(messages[0].content.length).to eq(1)
         expect(messages[0].content[0].text).to eq('2 + 2 equals 4')
 
         # Check result message
-        expect(messages[1]).to be_a(ClaudeCodeSDK::ResultMessage)
+        expect(messages[1]).to be_a(ClaudeCode::ResultMessage)
         expect(messages[1].total_cost_usd).to eq(0.001)
         expect(messages[1].session_id).to eq('test-session')
       end
@@ -52,10 +52,10 @@ RSpec.describe ClaudeCodeSDK, :integration do
           exit_status: 0
         )
 
-        options = ClaudeCodeSDK::ClaudeCodeOptions.new(allowed_tools: ['Read'])
+        options = ClaudeCode::ClaudeCodeOptions.new(allowed_tools: ['Read'])
         messages = []
 
-        ClaudeCodeSDK.query('Read /test.txt', options: options) do |msg|
+        ClaudeCode.query('Read /test.txt', options: options) do |msg|
           messages << msg
         end
 
@@ -64,11 +64,11 @@ RSpec.describe ClaudeCodeSDK, :integration do
 
         # Check assistant message with tool use
         assistant_msg = messages[0]
-        expect(assistant_msg).to be_a(ClaudeCodeSDK::AssistantMessage)
+        expect(assistant_msg).to be_a(ClaudeCode::AssistantMessage)
         expect(assistant_msg.content.length).to eq(1)
 
         tool_use = assistant_msg.content[0]
-        expect(tool_use).to be_a(ClaudeCodeSDK::ToolUseBlock)
+        expect(tool_use).to be_a(ClaudeCode::ToolUseBlock)
         expect(tool_use.name).to eq('Read')
         expect(tool_use.input['file_path']).to eq('/test.txt')
       end
@@ -79,8 +79,8 @@ RSpec.describe ClaudeCodeSDK, :integration do
         stub_cli_not_found
 
         expect do
-          ClaudeCodeSDK.query('test') { |_| nil }
-        end.to raise_error(ClaudeCodeSDK::CLINotFoundError) do |error|
+          ClaudeCode.query('test') { |_| nil }
+        end.to raise_error(ClaudeCode::CLINotFoundError) do |error|
           expect(error.message).to include('CLI not found')
         end
       end
@@ -95,7 +95,7 @@ RSpec.describe ClaudeCodeSDK, :integration do
           exit_status: 0
         )
 
-        result = ClaudeCodeSDK.query('test')
+        result = ClaudeCode.query('test')
         expect(result).to be_a(Enumerator)
 
         messages = result.to_a
@@ -107,12 +107,12 @@ RSpec.describe ClaudeCodeSDK, :integration do
     describe 'MCP integration' do
       it 'works with MCP servers configured' do
         mcp_servers = {
-          'test_server' => ClaudeCodeSDK::McpHttpServerConfig.new(
+          'test_server' => ClaudeCode::McpHttpServerConfig.new(
             url: 'http://test.com'
           )
         }
 
-        options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+        options = ClaudeCode::ClaudeCodeOptions.new(
           mcp_servers: mcp_servers,
           allowed_tools: ['mcp__test_server__test_tool']
         )
@@ -128,7 +128,7 @@ RSpec.describe ClaudeCodeSDK, :integration do
         )
 
         messages = []
-        ClaudeCodeSDK.query('Use MCP tool', options: options) do |msg|
+        ClaudeCode.query('Use MCP tool', options: options) do |msg|
           messages << msg
         end
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 # Example: Conversation resuming and continuation
 
@@ -14,15 +14,15 @@ puts "=== Conversation Resuming Example ==="
 puts "\n1. Starting initial conversation..."
 session_id = nil
 
-ClaudeCodeSDK.query("Hello! My name is John and I'm learning Ruby programming.") do |message|
+ClaudeCode.query("Hello! My name is John and I'm learning Ruby programming.") do |message|
   case message
-  when ClaudeCodeSDK::AssistantMessage
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         puts "🤖 #{block.text}"
       end
     end
-  when ClaudeCodeSDK::ResultMessage
+  when ClaudeCode::ResultMessage
     session_id = message.session_id
     puts "\n📋 Session ID: #{session_id}"
     puts "💰 Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
@@ -31,15 +31,15 @@ end
 
 # Continue the most recent conversation (without session ID)
 puts "\n2. Continuing the conversation..."
-ClaudeCodeSDK.continue_conversation("What are some good Ruby resources for beginners?") do |message|
+ClaudeCode.continue_conversation("What are some good Ruby resources for beginners?") do |message|
   case message
-  when ClaudeCodeSDK::AssistantMessage
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         puts "🤖 #{block.text}"
       end
     end
-  when ClaudeCodeSDK::ResultMessage
+  when ClaudeCode::ResultMessage
     puts "\n💰 Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
   end
 end
@@ -47,18 +47,18 @@ end
 # Resume a specific conversation by session ID
 if session_id
   puts "\n3. Resuming specific session: #{session_id}"
-  ClaudeCodeSDK.resume_conversation(
+  ClaudeCode.resume_conversation(
     session_id,
     "Can you recommend a specific Ruby book?"
   ) do |message|
     case message
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       message.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "🤖 #{block.text}"
         end
       end
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "\n💰 Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
     end
   end
@@ -66,24 +66,24 @@ end
 
 # Continue with additional options
 puts "\n4. Continuing with custom options..."
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   max_turns: 2,
   system_prompt: "You are a Ruby programming tutor. Keep responses concise and practical.",
   model: "claude-3-haiku"
 )
 
-ClaudeCodeSDK.continue_conversation(
+ClaudeCode.continue_conversation(
   "Show me a simple Ruby class example", 
   options: options
 ) do |message|
   case message
-  when ClaudeCodeSDK::AssistantMessage
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         puts "🤖 #{block.text}"
       end
     end
-  when ClaudeCodeSDK::ResultMessage
+  when ClaudeCode::ResultMessage
     puts "\n💰 Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
   end
 end

@@ -3,7 +3,7 @@
 
 require 'sidekiq'
 require 'action_cable'
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 # Sidekiq job for streaming Claude responses
 class ClaudeStreamingJob
@@ -28,7 +28,7 @@ class ClaudeStreamingJob
       message_count = 0
       
       # Stream Claude responses
-      ClaudeCodeSDK.query(
+      ClaudeCode.query(
         prompt: prompt,
         options: options,
         cli_path: claude_cli_path
@@ -44,27 +44,27 @@ class ClaudeStreamingJob
         }
         
         case message
-        when ClaudeCodeSDK::SystemMessage
+        when ClaudeCode::SystemMessage
           broadcast_data.merge!(
             message_type: 'system',
             subtype: message.subtype,
             data: message.data
           )
           
-        when ClaudeCodeSDK::AssistantMessage
+        when ClaudeCode::AssistantMessage
           # Process content blocks
           content_blocks = message.content.map do |block|
             case block
-            when ClaudeCodeSDK::TextBlock
+            when ClaudeCode::TextBlock
               { type: 'text', text: block.text }
-            when ClaudeCodeSDK::ToolUseBlock
+            when ClaudeCode::ToolUseBlock
               { 
                 type: 'tool_use', 
                 id: block.id, 
                 name: block.name, 
                 input: block.input 
               }
-            when ClaudeCodeSDK::ToolResultBlock
+            when ClaudeCode::ToolResultBlock
               { 
                 type: 'tool_result', 
                 tool_use_id: block.tool_use_id, 
@@ -79,7 +79,7 @@ class ClaudeStreamingJob
             content: content_blocks
           )
           
-        when ClaudeCodeSDK::ResultMessage
+        when ClaudeCode::ResultMessage
           broadcast_data.merge!(
             message_type: 'result',
             subtype: message.subtype,
@@ -129,7 +129,7 @@ class ClaudeStreamingJob
   private
   
   def build_claude_options(options_hash)
-    ClaudeCodeSDK::ClaudeCodeOptions.new(
+    ClaudeCode::ClaudeCodeOptions.new(
       model: options_hash['model'],
       max_turns: options_hash['max_turns'] || 1,
       system_prompt: options_hash['system_prompt'],
@@ -144,7 +144,7 @@ class ClaudeStreamingJob
     
     servers = {}
     mcp_config.each do |name, config|
-      servers.merge!(ClaudeCodeSDK.add_mcp_server(name, config))
+      servers.merge!(ClaudeCode.add_mcp_server(name, config))
     end
     servers
   end

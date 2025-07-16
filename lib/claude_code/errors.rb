@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ClaudeCodeSDK
+module ClaudeCode
   class ClaudeSDKError < StandardError
   end
 

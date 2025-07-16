@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 # Example: Different authentication methods for Claude Code SDK
 
@@ -17,16 +17,16 @@ if ENV['ANTHROPIC_API_KEY']
   
   # Test basic query with API key authentication
   puts "\nTesting with API key authentication..."
-  ClaudeCodeSDK.query("What is 2 + 2?") do |message|
+  ClaudeCode.query("What is 2 + 2?") do |message|
     case message
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       message.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "🤖 #{block.text}"
           break
         end
       end
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "💰 Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
     end
   end
@@ -49,20 +49,20 @@ if ENV['CLAUDE_CODE_USE_BEDROCK']
   # Test with Bedrock
   puts "\nTesting with Bedrock authentication..."
   begin
-    ClaudeCodeSDK.query("Hello from Bedrock!") do |message|
+    ClaudeCode.query("Hello from Bedrock!") do |message|
       case message
-      when ClaudeCodeSDK::AssistantMessage
+      when ClaudeCode::AssistantMessage
         message.content.each do |block|
-          if block.is_a?(ClaudeCodeSDK::TextBlock)
+          if block.is_a?(ClaudeCode::TextBlock)
             puts "🤖 #{block.text}"
             break
           end
         end
-      when ClaudeCodeSDK::ResultMessage
+      when ClaudeCode::ResultMessage
         puts "💰 Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
       end
     end
-  rescue ClaudeCodeSDK::CLIConnectionError => e
+  rescue ClaudeCode::CLIConnectionError => e
     puts "❌ Bedrock connection failed: #{e.message}"
   end
 else
@@ -82,20 +82,20 @@ if ENV['CLAUDE_CODE_USE_VERTEX']
   # Test with Vertex AI
   puts "\nTesting with Vertex AI authentication..."
   begin
-    ClaudeCodeSDK.query("Hello from Vertex AI!") do |message|
+    ClaudeCode.query("Hello from Vertex AI!") do |message|
       case message
-      when ClaudeCodeSDK::AssistantMessage
+      when ClaudeCode::AssistantMessage
         message.content.each do |block|
-          if block.is_a?(ClaudeCodeSDK::TextBlock)
+          if block.is_a?(ClaudeCode::TextBlock)
             puts "🤖 #{block.text}"
             break
           end
         end
-      when ClaudeCodeSDK::ResultMessage
+      when ClaudeCode::ResultMessage
         puts "💰 Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
       end
     end
-  rescue ClaudeCodeSDK::CLIConnectionError => e
+  rescue ClaudeCode::CLIConnectionError => e
     puts "❌ Vertex AI connection failed: #{e.message}"
   end
 else

@@ -7,7 +7,7 @@ Unofficial Ruby SDK for Claude Code. See the [Claude Code SDK documentation](htt
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'claude_code_sdk'
+gem 'claude_code'
 ```
 
 And then execute:
@@ -19,7 +19,7 @@ bundle install
 Or install it yourself as:
 
 ```bash
-gem install claude_code_sdk
+gem install claude_code
 ```
 
 **Prerequisites:**
@@ -30,10 +30,10 @@ gem install claude_code_sdk
 ## Quick Start
 
 ```ruby
-require 'claude_code_sdk'
+require 'claude_code'
 
 # Simple query
-ClaudeCodeSDK.query(prompt: "What is 2 + 2?").each do |message|
+ClaudeCode.query(prompt: "What is 2 + 2?").each do |message|
   puts message
 end
 ```
@@ -66,13 +66,13 @@ export GOOGLE_CLOUD_PROJECT='your-project-id'
 ### Basic Query
 
 ```ruby
-require 'claude_code_sdk'
+require 'claude_code'
 
 # Simple query
-ClaudeCodeSDK.query(prompt: "Hello Claude").each do |message|
-  if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+ClaudeCode.query(prompt: "Hello Claude").each do |message|
+  if message.is_a?(ClaudeCode::AssistantMessage)
     message.content.each do |block|
-      if block.is_a?(ClaudeCodeSDK::TextBlock)
+      if block.is_a?(ClaudeCode::TextBlock)
         puts block.text
       end
     end
@@ -80,12 +80,12 @@ ClaudeCodeSDK.query(prompt: "Hello Claude").each do |message|
 end
 
 # With options
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   system_prompt: "You are a helpful assistant",
   max_turns: 1
 )
 
-ClaudeCodeSDK.query(prompt: "Tell me a joke", options: options).each do |message|
+ClaudeCode.query(prompt: "Tell me a joke", options: options).each do |message|
   puts message
 end
 ```
@@ -94,19 +94,19 @@ end
 
 ```ruby
 # Continue the most recent conversation
-ClaudeCodeSDK.continue_conversation("What did we just discuss?").each do |message|
+ClaudeCode.continue_conversation("What did we just discuss?").each do |message|
   # Process messages...
 end
 
 # Resume a specific conversation by session ID
 session_id = "550e8400-e29b-41d4-a716-446655440000"
-ClaudeCodeSDK.resume_conversation(session_id, "Continue our discussion").each do |message|
+ClaudeCode.resume_conversation(session_id, "Continue our discussion").each do |message|
   # Process messages...
 end
 
 # Continue with options
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(max_turns: 2)
-ClaudeCodeSDK.continue_conversation("Add more details", options: options)
+options = ClaudeCode::ClaudeCodeOptions.new(max_turns: 2)
+ClaudeCode.continue_conversation("Add more details", options: options)
 ```
 
 ### Streaming JSON Input
@@ -116,19 +116,19 @@ For multi-turn conversations without restarting the CLI, use streaming JSON inpu
 ```ruby
 # Create multiple user messages for a conversation
 messages = [
-  ClaudeCodeSDK::JSONLHelpers.create_user_message("Hello! I'm working on a Ruby project."),
-  ClaudeCodeSDK::JSONLHelpers.create_user_message("Can you help me understand modules?"),
-  ClaudeCodeSDK::JSONLHelpers.create_user_message("Show me a practical example.")
+  ClaudeCode::JSONLHelpers.create_user_message("Hello! I'm working on a Ruby project."),
+  ClaudeCode::JSONLHelpers.create_user_message("Can you help me understand modules?"),
+  ClaudeCode::JSONLHelpers.create_user_message("Show me a practical example.")
 ]
 
 # Process all messages in a single streaming session
-ClaudeCodeSDK.stream_json_query(messages) do |message|
+ClaudeCode.stream_json_query(messages) do |message|
   case message
-  when ClaudeCodeSDK::AssistantMessage
+  when ClaudeCode::AssistantMessage
     message.content.each do |block|
-      puts block.text if block.is_a?(ClaudeCodeSDK::TextBlock)
+      puts block.text if block.is_a?(ClaudeCode::TextBlock)
     end
-  when ClaudeCodeSDK::ResultMessage
+  when ClaudeCode::ResultMessage
     puts "Cost: $#{message.total_cost_usd}"
   end
 end
@@ -144,18 +144,18 @@ custom_messages = [
   }
 ]
 
-ClaudeCodeSDK.stream_json_query(custom_messages)
+ClaudeCode.stream_json_query(custom_messages)
 ```
 
 ### Using Tools
 
 ```ruby
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   allowed_tools: ["Read", "Write", "Bash"],
   permission_mode: 'acceptEdits'  # auto-accept file edits
 )
 
-ClaudeCodeSDK.query(
+ClaudeCode.query(
   prompt: "Create a hello.rb file",
   options: options
 ).each do |message|
@@ -166,7 +166,7 @@ end
 ### Working Directory
 
 ```ruby
-options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+options = ClaudeCode::ClaudeCodeOptions.new(
   cwd: "/path/to/project"
 )
 ```
@@ -175,7 +175,7 @@ options = ClaudeCodeSDK::ClaudeCodeOptions.new(
 
 ### Core Methods
 
-#### `ClaudeCodeSDK.query(prompt:, options: nil, cli_path: nil, mcp_servers: {})`
+#### `ClaudeCode.query(prompt:, options: nil, cli_path: nil, mcp_servers: {})`
 
 Main function for querying Claude.
 
@@ -187,7 +187,7 @@ Main function for querying Claude.
 
 **Returns:** Enumerator of response messages
 
-#### `ClaudeCodeSDK.continue_conversation(prompt = nil, options: nil, cli_path: nil, mcp_servers: {})`
+#### `ClaudeCode.continue_conversation(prompt = nil, options: nil, cli_path: nil, mcp_servers: {})`
 
 Continue the most recent conversation.
 
@@ -199,7 +199,7 @@ Continue the most recent conversation.
 
 **Returns:** Enumerator of response messages
 
-#### `ClaudeCodeSDK.resume_conversation(session_id, prompt = nil, options: nil, cli_path: nil, mcp_servers: {})`
+#### `ClaudeCode.resume_conversation(session_id, prompt = nil, options: nil, cli_path: nil, mcp_servers: {})`
 
 Resume a specific conversation by session ID.
 
@@ -212,11 +212,11 @@ Resume a specific conversation by session ID.
 
 **Returns:** Enumerator of response messages
 
-#### `ClaudeCodeSDK.stream_query(prompt:, options: nil, cli_path: nil, mcp_servers: {}, &block)`
+#### `ClaudeCode.stream_query(prompt:, options: nil, cli_path: nil, mcp_servers: {}, &block)`
 
 Stream query responses with auto-formatting or custom block handling.
 
-#### `ClaudeCodeSDK.stream_json_query(messages, options: nil, cli_path: nil, mcp_servers: {})`
+#### `ClaudeCode.stream_json_query(messages, options: nil, cli_path: nil, mcp_servers: {})`
 
 Send multiple messages via streaming JSON input (JSONL format). This allows multiple turns of conversation without re-launching the Claude binary.
 
@@ -228,25 +228,25 @@ Send multiple messages via streaming JSON input (JSONL format). This allows mult
 
 **Returns:** Enumerator of response messages
 
-#### `ClaudeCodeSDK.quick_mcp_query(prompt, server_name:, server_url:, tools:, **options)`
+#### `ClaudeCode.quick_mcp_query(prompt, server_name:, server_url:, tools:, **options)`
 
 Ultra-convenient method for quick MCP server usage.
 
-#### `ClaudeCodeSDK.add_mcp_server(name, config)`
+#### `ClaudeCode.add_mcp_server(name, config)`
 
 Helper to create MCP server configurations.
 
 ### JSONL Helpers
 
-#### `ClaudeCodeSDK::JSONLHelpers.create_user_message(text)`
+#### `ClaudeCode::JSONLHelpers.create_user_message(text)`
 
 Create a user message in the format expected by Claude CLI.
 
-#### `ClaudeCodeSDK::JSONLHelpers.create_conversation(*turns)`
+#### `ClaudeCode::JSONLHelpers.create_conversation(*turns)`
 
 Create multiple user messages from text strings.
 
-#### `ClaudeCodeSDK::JSONLHelpers.format_messages_as_jsonl(messages)`
+#### `ClaudeCode::JSONLHelpers.format_messages_as_jsonl(messages)`
 
 Format multiple messages as JSONL string.
 
@@ -261,14 +261,14 @@ See [lib/claude_code_sdk/types.rb](lib/claude_code_sdk/types.rb) for complete ty
 
 ```ruby
 begin
-  ClaudeCodeSDK.query(prompt: "Hello").each do |message|
+  ClaudeCode.query(prompt: "Hello").each do |message|
     # Process message
   end
-rescue ClaudeCodeSDK::CLINotFoundError
+rescue ClaudeCode::CLINotFoundError
   puts "Please install Claude Code"
-rescue ClaudeCodeSDK::ProcessError => e
+rescue ClaudeCode::ProcessError => e
   puts "Process failed with exit code: #{e.exit_code}"
-rescue ClaudeCodeSDK::CLIJSONDecodeError => e
+rescue ClaudeCode::CLIJSONDecodeError => e
   puts "Failed to parse response: #{e}"
 end
 ```

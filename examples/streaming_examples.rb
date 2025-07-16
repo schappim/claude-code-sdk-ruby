@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # Streaming examples for Ruby Claude Code SDK
 
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 def streaming_example
   claude_path = "/Users/admin/.claude/local/claude"
@@ -10,7 +10,7 @@ def streaming_example
   puts "Watch messages arrive in real-time!"
   puts
   
-  options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+  options = ClaudeCode::ClaudeCodeOptions.new(
     model: "sonnet",
     max_turns: 1,
     system_prompt: "You are helpful. Provide detailed explanations."
@@ -19,7 +19,7 @@ def streaming_example
   start_time = Time.now
   message_count = 0
   
-  ClaudeCodeSDK.query(
+  ClaudeCode.query(
     prompt: "Explain how Ruby blocks work and give some examples",
     options: options,
     cli_path: claude_path
@@ -30,7 +30,7 @@ def streaming_example
     puts "[#{format('%.3f', timestamp)}s] Message #{message_count}:"
     
     case message
-    when ClaudeCodeSDK::SystemMessage
+    when ClaudeCode::SystemMessage
       puts "  🔧 SYSTEM: #{message.subtype}"
       if message.subtype == "init"
         puts "     Session: #{message.data['session_id']}"
@@ -39,14 +39,14 @@ def streaming_example
         puts "     MCP Servers: #{message.data['mcp_servers'].length}"
       end
       
-    when ClaudeCodeSDK::UserMessage
+    when ClaudeCode::UserMessage
       puts "  👤 USER: #{message.content[0, 50]}..."
       
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       puts "  🤖 ASSISTANT:"
       message.content.each do |block|
         case block
-        when ClaudeCodeSDK::TextBlock
+        when ClaudeCode::TextBlock
           # Stream text in chunks to show real-time effect
           text = block.text
           if text.length > 100
@@ -56,16 +56,16 @@ def streaming_example
             puts "     💬 #{text}"
           end
           
-        when ClaudeCodeSDK::ToolUseBlock
+        when ClaudeCode::ToolUseBlock
           puts "     🔧 TOOL: #{block.name}"
           puts "        Input: #{block.input}"
           
-        when ClaudeCodeSDK::ToolResultBlock
+        when ClaudeCode::ToolResultBlock
           puts "     📤 RESULT: #{block.content}"
         end
       end
       
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "  ✅ RESULT: #{message.subtype}"
       puts "     Duration: #{message.duration_ms}ms (API: #{message.duration_api_ms}ms)"
       puts "     Turns: #{message.num_turns}"
@@ -91,7 +91,7 @@ def streaming_mcp_example
   
   start_time = Time.now
   
-  ClaudeCodeSDK.quick_mcp_query(
+  ClaudeCode.quick_mcp_query(
     "Use the about tool and then explain what you learned about this MCP server",
     server_name: "ninja",
     server_url: "https://mcp-creator-ninja-v1-4-0.mcp.soy/",
@@ -101,24 +101,24 @@ def streaming_mcp_example
     timestamp = Time.now - start_time
     
     case message
-    when ClaudeCodeSDK::SystemMessage
+    when ClaudeCode::SystemMessage
       puts "[#{format('%.3f', timestamp)}s] 🔧 System init - MCP servers: #{message.data['mcp_servers'].length}"
       
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       puts "[#{format('%.3f', timestamp)}s] 🤖 Assistant response:"
       message.content.each do |block|
         case block
-        when ClaudeCodeSDK::TextBlock
+        when ClaudeCode::TextBlock
           puts "   💬 #{block.text}"
-        when ClaudeCodeSDK::ToolUseBlock
+        when ClaudeCode::ToolUseBlock
           puts "   🔧 Using tool: #{block.name}"
           puts "   📥 Input: #{block.input}"
-        when ClaudeCodeSDK::ToolResultBlock
+        when ClaudeCode::ToolResultBlock
           puts "   📤 Tool result received"
         end
       end
       
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "[#{format('%.3f', timestamp)}s] ✅ Final result - Cost: $#{format('%.6f', message.total_cost_usd || 0)}"
     end
     
@@ -133,9 +133,9 @@ def simple_streaming_examples
 
   # Example 1: Default streaming output
   puts "1. Default streaming (auto-formatted):"
-  ClaudeCodeSDK.stream_query(
+  ClaudeCode.stream_query(
     prompt: "Count from 1 to 3 and explain each number",
-    options: ClaudeCodeSDK::ClaudeCodeOptions.new(
+    options: ClaudeCode::ClaudeCodeOptions.new(
       model: "sonnet",
       max_turns: 1
     ),
@@ -148,21 +148,21 @@ def simple_streaming_examples
   puts "2. Custom streaming with timestamps:"
   start_time = Time.now
 
-  ClaudeCodeSDK.stream_query(
+  ClaudeCode.stream_query(
     prompt: "What is Ruby?",
-    options: ClaudeCodeSDK::ClaudeCodeOptions.new(max_turns: 1),
+    options: ClaudeCode::ClaudeCodeOptions.new(max_turns: 1),
     cli_path: "/Users/admin/.claude/local/claude"
   ) do |message, index|
     timestamp = Time.now - start_time
     
     case message
-    when ClaudeCodeSDK::AssistantMessage
+    when ClaudeCode::AssistantMessage
       message.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "[#{format('%.2f', timestamp)}s] #{block.text}"
         end
       end
-    when ClaudeCodeSDK::ResultMessage
+    when ClaudeCode::ResultMessage
       puts "[#{format('%.2f', timestamp)}s] 💰 $#{format('%.6f', message.total_cost_usd || 0)}"
     end
   end

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'lib/claude_code_sdk/version'
+require_relative 'lib/claude_code/version'
 
 Gem::Specification.new do |spec|
-  spec.name = 'claude_code_sdk'
-  spec.version = ClaudeCodeSDK::VERSION
+  spec.name = 'claude_code'
+  spec.version = ClaudeCode::VERSION
   spec.authors = ['Anthropic']
   spec.email = ['support@anthropic.com']
 

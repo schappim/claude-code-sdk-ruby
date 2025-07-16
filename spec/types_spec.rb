@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
-RSpec.describe ClaudeCodeSDK do
+RSpec.describe ClaudeCode do
   describe 'message types' do
-    describe ClaudeCodeSDK::TextBlock do
+    describe ClaudeCode::TextBlock do
       it 'initializes with text' do
-        block = ClaudeCodeSDK::TextBlock.new("Hello")
+        block = ClaudeCode::TextBlock.new("Hello")
         expect(block.text).to eq("Hello")
       end
     end
 
-    describe ClaudeCodeSDK::ToolUseBlock do
+    describe ClaudeCode::ToolUseBlock do
       it 'initializes with required parameters' do
-        block = ClaudeCodeSDK::ToolUseBlock.new(
+        block = ClaudeCode::ToolUseBlock.new(
           id: "test-id",
           name: "test-tool",
           input: { "key" => "value" }
@@ -23,25 +23,25 @@ RSpec.describe ClaudeCodeSDK do
       end
     end
 
-    describe ClaudeCodeSDK::UserMessage do
+    describe ClaudeCode::UserMessage do
       it 'initializes with content' do
-        message = ClaudeCodeSDK::UserMessage.new("Hello Claude")
+        message = ClaudeCode::UserMessage.new("Hello Claude")
         expect(message.content).to eq("Hello Claude")
       end
     end
 
-    describe ClaudeCodeSDK::AssistantMessage do
+    describe ClaudeCode::AssistantMessage do
       it 'initializes with content blocks' do
-        blocks = [ClaudeCodeSDK::TextBlock.new("Hello")]
-        message = ClaudeCodeSDK::AssistantMessage.new(blocks)
+        blocks = [ClaudeCode::TextBlock.new("Hello")]
+        message = ClaudeCode::AssistantMessage.new(blocks)
         expect(message.content).to eq(blocks)
       end
     end
   end
 
-  describe ClaudeCodeSDK::ClaudeCodeOptions do
+  describe ClaudeCode::ClaudeCodeOptions do
     it 'initializes with default values' do
-      options = ClaudeCodeSDK::ClaudeCodeOptions.new
+      options = ClaudeCode::ClaudeCodeOptions.new
       
       expect(options.allowed_tools).to eq([])
       expect(options.max_thinking_tokens).to eq(8000)
@@ -50,7 +50,7 @@ RSpec.describe ClaudeCodeSDK do
     end
 
     it 'accepts custom values' do
-      options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+      options = ClaudeCode::ClaudeCodeOptions.new(
         allowed_tools: ["Read", "Write"],
         system_prompt: "Test prompt",
         max_turns: 5
@@ -63,7 +63,7 @@ RSpec.describe ClaudeCodeSDK do
 
     describe '#to_h' do
       it 'converts to hash with compact values' do
-        options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+        options = ClaudeCode::ClaudeCodeOptions.new(
           system_prompt: "Test",
           max_turns: 1
         )

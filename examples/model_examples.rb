@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # Model specification examples for Ruby Claude Code SDK
 
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 def test_model_specification
   claude_path = "/Users/admin/.claude/local/claude"
@@ -11,19 +11,19 @@ def test_model_specification
   
   # Example 1: Using model alias
   puts "1. Using model alias 'sonnet':"
-  options1 = ClaudeCodeSDK::ClaudeCodeOptions.new(
+  options1 = ClaudeCode::ClaudeCodeOptions.new(
     model: "sonnet",
     max_turns: 1
   )
   
-  ClaudeCodeSDK.query(
+  ClaudeCode.query(
     prompt: "What's the capital of Japan?",
     options: options1,
     cli_path: claude_path
   ).each do |message|
-    if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+    if message.is_a?(ClaudeCode::AssistantMessage)
       message.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "   Answer: #{block.text}"
         end
       end
@@ -34,20 +34,20 @@ def test_model_specification
   
   # Example 2: Using full model name
   puts "2. Using full model name 'claude-sonnet-4-20250514':"
-  options2 = ClaudeCodeSDK::ClaudeCodeOptions.new(
+  options2 = ClaudeCode::ClaudeCodeOptions.new(
     model: "claude-sonnet-4-20250514",
     system_prompt: "Be very concise.",
     max_turns: 1
   )
   
-  ClaudeCodeSDK.query(
+  ClaudeCode.query(
     prompt: "What's 10 + 15?",
     options: options2,
     cli_path: claude_path
   ).each do |message|
-    if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+    if message.is_a?(ClaudeCode::AssistantMessage)
       message.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "   Answer: #{block.text}"
         end
       end
@@ -58,18 +58,18 @@ def test_model_specification
   
   # Example 3: No model specified (uses default)
   puts "3. Using default model (no model specified):"
-  options3 = ClaudeCodeSDK::ClaudeCodeOptions.new(
+  options3 = ClaudeCode::ClaudeCodeOptions.new(
     max_turns: 1
   )
   
-  ClaudeCodeSDK.query(
+  ClaudeCode.query(
     prompt: "What's the largest planet in our solar system?",
     options: options3,
     cli_path: claude_path
   ).each do |message|
-    if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+    if message.is_a?(ClaudeCode::AssistantMessage)
       message.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "   Answer: #{block.text}"
         end
       end
@@ -82,19 +82,19 @@ def show_usage
   puts
   puts "```ruby"
   puts "# Using model alias (recommended)"
-  puts "options = ClaudeCodeSDK::ClaudeCodeOptions.new("
+  puts "options = ClaudeCode::ClaudeCodeOptions.new("
   puts "  model: 'sonnet',  # or 'haiku', 'opus'"
   puts "  max_turns: 1"
   puts ")"
   puts
   puts "# Using full model name"
-  puts "options = ClaudeCodeSDK::ClaudeCodeOptions.new("
+  puts "options = ClaudeCode::ClaudeCodeOptions.new("
   puts "  model: 'claude-sonnet-4-20250514',"
   puts "  system_prompt: 'You are helpful.'"
   puts ")"
   puts
   puts "# Query with model"
-  puts "ClaudeCodeSDK.query("
+  puts "ClaudeCode.query("
   puts "  prompt: 'Your question here',"
   puts "  options: options,"
   puts "  cli_path: '/path/to/claude'"

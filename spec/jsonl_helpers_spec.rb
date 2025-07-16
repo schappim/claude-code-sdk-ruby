@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe ClaudeCodeSDK::JSONLHelpers do
+RSpec.describe ClaudeCode::JSONLHelpers do
   describe '.create_user_message' do
     it 'creates properly formatted user message' do
       text = 'Hello Claude!'

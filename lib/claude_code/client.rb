@@ -4,7 +4,7 @@ require 'json'
 require 'open3'
 require 'pathname'
 
-module ClaudeCodeSDK
+module ClaudeCode
   class Client
     def initialize
       # Client setup
@@ -175,7 +175,7 @@ module ClaudeCodeSDK
           export PATH="$HOME/node_modules/.bin:$PATH"
 
         🔧 Or specify the path when creating client:
-          ClaudeCodeSDK.query(..., cli_path: '/path/to/claude')
+          ClaudeCode.query(..., cli_path: '/path/to/claude')
 
         💡 For more installation options, see:
         https://docs.anthropic.com/en/docs/claude-code/quickstart

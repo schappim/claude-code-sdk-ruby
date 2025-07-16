@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # MCP server configuration examples for Ruby Claude Code SDK
 
-require_relative '../lib/claude_code_sdk'
+require_relative '../lib/claude_code'
 
 def test_mcp_creator_ninja
   claude_path = "/Users/admin/.claude/local/claude"
@@ -12,36 +12,36 @@ def test_mcp_creator_ninja
   # Method 1: Using the ergonomic mcp_servers parameter
   puts "1. Using ergonomic mcp_servers parameter:"
   
-  mcp_servers = ClaudeCodeSDK.add_mcp_server(
+  mcp_servers = ClaudeCode.add_mcp_server(
     "creator_ninja", 
     "https://mcp-creator-ninja-v1-4-0.mcp.soy/"
   )
   
-  options = ClaudeCodeSDK::ClaudeCodeOptions.new(
+  options = ClaudeCode::ClaudeCodeOptions.new(
     max_turns: 1,
     allowed_tools: ["mcp__creator_ninja__about"], # Allow the 'about' tool
     system_prompt: "You are helpful. Use the MCP tools available to you."
   )
   
   begin
-    ClaudeCodeSDK.query(
+    ClaudeCode.query(
       prompt: "Use the about tool to tell me about the Creator Ninja MCP server",
       options: options,
       cli_path: claude_path,
       mcp_servers: mcp_servers
     ).each do |message|
       case message
-      when ClaudeCodeSDK::AssistantMessage
+      when ClaudeCode::AssistantMessage
         message.content.each do |block|
           case block
-          when ClaudeCodeSDK::TextBlock
+          when ClaudeCode::TextBlock
             puts "   Response: #{block.text}"
-          when ClaudeCodeSDK::ToolUseBlock
+          when ClaudeCode::ToolUseBlock
             puts "   Tool Used: #{block.name}"
             puts "   Tool Input: #{block.input}"
           end
         end
-      when ClaudeCodeSDK::ResultMessage
+      when ClaudeCode::ResultMessage
         puts "   Cost: $#{format('%.6f', message.total_cost_usd)}" if message.total_cost_usd
       end
     end
@@ -55,11 +55,11 @@ def test_mcp_creator_ninja
   # Method 2: Using options directly
   puts "2. Using ClaudeCodeOptions directly:"
   
-  creator_ninja_server = ClaudeCodeSDK::McpHttpServerConfig.new(
+  creator_ninja_server = ClaudeCode::McpHttpServerConfig.new(
     url: "https://mcp-creator-ninja-v1-4-0.mcp.soy/"
   )
   
-  options2 = ClaudeCodeSDK::ClaudeCodeOptions.new(
+  options2 = ClaudeCode::ClaudeCodeOptions.new(
     max_turns: 1,
     mcp_servers: { "creator_ninja" => creator_ninja_server },
     allowed_tools: ["mcp__creator_ninja__about"],
@@ -67,23 +67,23 @@ def test_mcp_creator_ninja
   )
   
   begin
-    ClaudeCodeSDK.query(
+    ClaudeCode.query(
       prompt: "What can you tell me about yourself using the about tool?",
       options: options2,
       cli_path: claude_path
     ).each do |message|
       case message
-      when ClaudeCodeSDK::AssistantMessage
+      when ClaudeCode::AssistantMessage
         message.content.each do |block|
           case block
-          when ClaudeCodeSDK::TextBlock
+          when ClaudeCode::TextBlock
             puts "   Response: #{block.text}"
-          when ClaudeCodeSDK::ToolUseBlock
+          when ClaudeCode::ToolUseBlock
             puts "   Tool Used: #{block.name}"
             puts "   Tool Input: #{block.input}"
           end
         end
-      when ClaudeCodeSDK::ResultMessage
+      when ClaudeCode::ResultMessage
         puts "   Cost: $#{format('%.6f', message.total_cost_usd)}" if message.total_cost_usd
       end
     end
@@ -98,17 +98,17 @@ def test_ultra_convenient_method
   puts
   
   # The simplest way to use MCP - just specify server and tools
-  ClaudeCodeSDK.quick_mcp_query(
+  ClaudeCode.quick_mcp_query(
     "Tell me about this MCP server using the about tool",
     server_name: "ninja",
     server_url: "https://mcp-creator-ninja-v1-4-0.mcp.soy/",
     tools: "about"  # Can be string or array
   ).each do |message|
-    if message.is_a?(ClaudeCodeSDK::AssistantMessage)
+    if message.is_a?(ClaudeCode::AssistantMessage)
       message.content.each do |block|
-        if block.is_a?(ClaudeCodeSDK::TextBlock)
+        if block.is_a?(ClaudeCode::TextBlock)
           puts "Response: #{block.text}"
-        elsif block.is_a?(ClaudeCodeSDK::ToolUseBlock)
+        elsif block.is_a?(ClaudeCode::ToolUseBlock)
           puts "🔧 Tool: #{block.name}"
         end
       end
@@ -123,11 +123,11 @@ def show_mcp_usage_examples
   puts
   puts "```ruby"
   puts "# Method 1: Using ergonomic helper"
-  puts "mcp_servers = ClaudeCodeSDK.add_mcp_server("
+  puts "mcp_servers = ClaudeCode.add_mcp_server("
   puts "  'my_server', 'https://my-mcp-server.com/'"
   puts ")"
   puts
-  puts "ClaudeCodeSDK.query("
+  puts "ClaudeCode.query("
   puts "  prompt: 'Use my_server tools',"
   puts "  mcp_servers: mcp_servers,"
   puts "  options: ClaudeCodeOptions.new("
@@ -136,12 +136,12 @@ def show_mcp_usage_examples
   puts ")"
   puts
   puts "# Method 2: Using configuration objects"
-  puts "options = ClaudeCodeSDK::ClaudeCodeOptions.new("
+  puts "options = ClaudeCode::ClaudeCodeOptions.new("
   puts "  mcp_servers: {"
-  puts "    'http_server' => ClaudeCodeSDK::McpHttpServerConfig.new("
+  puts "    'http_server' => ClaudeCode::McpHttpServerConfig.new("
   puts "      url: 'https://api.example.com'"
   puts "    ),"
-  puts "    'stdio_server' => ClaudeCodeSDK::McpStdioServerConfig.new("
+  puts "    'stdio_server' => ClaudeCode::McpStdioServerConfig.new("
   puts "      command: 'node',"
   puts "      args: ['my-mcp-server.js']"
   puts "    )"
@@ -151,8 +151,8 @@ def show_mcp_usage_examples
   puts
   puts "# Method 3: Multiple servers with helper"
   puts "servers = {}"
-  puts "servers.merge!(ClaudeCodeSDK.add_mcp_server('ninja', 'https://...'))"
-  puts "servers.merge!(ClaudeCodeSDK.add_mcp_server('local', 'node server.js'))"
+  puts "servers.merge!(ClaudeCode.add_mcp_server('ninja', 'https://...'))"
+  puts "servers.merge!(ClaudeCode.add_mcp_server('local', 'node server.js'))"
   puts "```"
   puts
   puts "="*60
